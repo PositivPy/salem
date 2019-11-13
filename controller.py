@@ -9,6 +9,8 @@ import model, api
 # when listing comes update database 
 # when database updated 
 
+# check the hash of the query in db to know if first time crawl
+
 class Controller:
     
     def __init__(self, args, model, api)
