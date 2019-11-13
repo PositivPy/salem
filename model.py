@@ -1,60 +1,43 @@
 #!/usr/bin/env python3
+import asyncio 
+import aiosqlite
+import scraper
 
-import sqlite3 
-
-class DataBase:
-
+class AsyncDB:
+    """Async database via aiosqlite"""
     def __init__(self, name):
-        self.connection = None
-        self.db_file = name
-        self.jobs_queue = []
+        self.scraper = scraper.Indeed(depth=1, location='London')
+        self.name = name
+        asyncio.run(self.open())
 
-    def work_on_db(func):
-        """ Decorating functions to open and close connection DB automatically """
-        def wrapper(self):
-            self.create_connection()
-            func(self)
-            self.close_connection()
-        return wrapper
-    
-    @work_on_db
-    def create_table(self, name="hello"):
-        print("Not implemented")
-    
-    def create_connection(self):
-        if TEST:
-            print("Connecting")
-        try:
-            conn = sqlite3.connect(self.db_file)
-        except Error as e:
-            print(e)
-        finally:
-            if conn:
-                self.connection = conn 
+    async def open(self):
+        con = await aiosqlite.connect(self.name)
+        cursor = await con.cursor()
+        await cursor.execute('''CREATE TABLE if not exists Jobs (
+                        title, company, salary, location, type, 
+                        date, description, url, apply_link, skills)''')
+        await con.commit()
+        await con.close()
+        return con, cursor
 
-    def close_connection(self):
-        if TEST : 
-            print("Closing")
-        if self.connection:
-            self.connection.close()
-            self.connection = None
-
+    async def scrape_query(self, query):
+        async with aiosqlite.connect(self.name) as db:
+            async for offer in self.scraper.query(query):
+                if offer is None:
+                    pass 
+                print(offer.title)
+                f = f'INSERT INTO Jobs VALUES (\
+                        ({offer.title}, {offer.company}, ({offer.salary}),\
+                        ({offer.location}), ({offer.type_}), ({offer.date}),\
+                        ({offer.txt}), ({offer.url}), ({offer.link}), ({offer.skills})'
+                print(f)
+                await db.execute(f)
 
 if __name__=="__main__":
     import os 
     TEST = True
 
     name = "test.db"
-    print("Creating a test database file.")
-    db = DataBase(name)
-    db.create_table()
-    if os.path.exists(name):
-        print("Test success, Databse created")
-        try:
-            os.remove(name)
-            print("Database removed")
-        except Error as e:
-            print("Error : Database not removed.", e)
-    else:
-        print("Test unsuccessful.")
+    db = AsyncDB(name)
+    asyncio.run(db.scrape_query("bartender"))
 
