@@ -1,21 +1,25 @@
-import nltk
-import sys
-import string
+#!/usr/bin/env python3
 
-# living wage is £21,944 a year or 10.55 and hour
+import string
+import asyncio
 
 qualifications = ['assistant', 'manager', 'supervisor', 'gcse', 'degree', 'apprentice', 'clerk', 'master', 'jr', 'senior', 'mid', 'junior', 'grad', 'fullstack', 'graduated', 'graduate']
 
 # TODO : Should probably use a db
 f = open('comp_skills')
-comp_skill_db = f.read().splitlines()
+comp_skills_db = f.read().splitlines()
 f.close()
 
 f = open('skills_')
-skill_db = f.read().splitlines()
+simple_skills_db = f.read().splitlines()
 f.close()
 
+skills_db = comp_skills_db + simple_skills_db + qualifications
 
+# TODO: optimised way to carry a full nltk analysis
+# unfortunately using nltk multiplies scraping time by 2 
+# initialising lemmatizing being the most time consuming
+# maybe run the analysis separately and than add it to the database  
 class IndeedNLTK:
 
     def analyse(self, offer):
@@ -29,8 +33,10 @@ class IndeedNLTK:
             return
 
         txt = txt.lower()
-        sanitised = self._sanitise(txt)
-        skills = self._extract_skills(txt, sanitised)
+        # disabeling lemma drasticaly improves the performance (10 to 15sec per run)
+        #sanitised = self._sanitise(txt)
+        
+        skills = self._extract_skills(txt)
         salary = self._extract_salary(salary)
 
         # replace values in offer with the new values
@@ -39,59 +45,14 @@ class IndeedNLTK:
 
         return offer
 
-    def _sanitise(self, text):
-        """
-        Return list of sanitised words; remove punctuation, split, lemmatize, stem
-        ::return:: list
-        """
-
-        # remove punctuation
-        text = text.translate(str.maketrans(' ', ' ', string.punctuation))
-
-        text = text.lower()
-
-        # split text
-        tokens = nltk.word_tokenize(text)
-        if len(tokens) < 2:
-            return
-
-        # singular to plurial
-        lemma = nltk.stem.WordNetLemmatizer()
-        lem = [lemma.lemmatize(word) for word in tokens]
-
-        # words to word's stem i.e.; programer => program
-        stemma = nltk.stem.PorterStemmer()
-        stem = [stemma.stem(token) for token in lem]
-        
-        return stem
-
-    def _extract_skills(self, text, sanitised):
-        # TODO : clean this up somehow 
-        comp = self._comp_skills(text)
-        simple = self._extract_simple_skills(sanitised)
-        return simple + comp
-
-    def _comp_skills(self, text):
+    def _extract_skills(self, text):
         # extracting skills
-        text = text.lower()
-        keywords = [w for w in comp_skill_db if w in text]
-        return keywords
+        # unfortunately optimising meant getting rid of list comprehension
+        # thus comp_skills are not matched for now
+        # TODO : optimised way to extract composite skills 
+        text = text.lower().split()
+        keywords = set(text).intersection(skills_db)
 
-        # frequency distribution on keywords 
-        tag_fd = dict(nltk.FreqDist(word for word in keywords))
-        # as sorted list of tuples
-        tag_fd = sorted(tag_fd.items(), key=lambda x: x[1], reverse=True)
-        print(tag_fd)
-        return tag_fd
-
-    def _extract_simple_skills(self, sanitised):
-        keywords = [w for w in skill_db if w in sanitised]
-
-        # frequency distribution on keywords 
-        tag_fd = dict(nltk.FreqDist(word for word in keywords))
-        # as sorted list of tuples
-        tag_fd = sorted(tag_fd.items(), key=lambda x: x[1], reverse=True)
-    
         return keywords
 
     def _extract_salary(self, salary):

@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
-from bs4 import BeautifulSoup as bs
-import collections   # Don't forget nammedTuples
+import collections
 import urllib
 import asyncio
 import aiostream
 import time
+import lxml.html
 
 Offer = collections.namedtuple('JobOffer', 'title company salary location \
-                                            type_ date txt url link skills',
-                                            defaults=(0,))
+                                         type_ date txt url link skills',
+                                         defaults=(0,))
 
 class Indeed:
 
     BASE_URL = "https://www.indeed.co.uk"
 
     import http_ as driver
-    from nltk_ import IndeedNLTK
+    from nltk_ import IndeedNLTK 
     nltk_ = IndeedNLTK()
 
     def __init__(self, depth=1, location='London', fromage=14):
@@ -28,7 +28,7 @@ class Indeed:
             'l': location,
             'sort': "date",
             'start': 0,
-            'fromage': fromage      # only results under 2, 7, 14 days
+            'fromage': fromage      # only results under 2, 7, 14 days 
         }
 
         self.seen_url = []
@@ -38,17 +38,17 @@ class Indeed:
         self.start = int()
         self.end = int()
 
-
     async def query(self, query):
         self.start = time.time()
 
-        #print(f'Scraping {depth} pages for [ {query} ]')
         self.params['q'] = query
+
         # create worker coroutines for each listing pages
         coros = [self._worker(url) for url in self.generate_listing_url(pages=self.depth)]
-        # merge async generators into a single stream
-        async for item in aiostream.stream.merge(*coros):
-                yield item
+        
+        # merge these async generators into a single stream
+        async for offer in aiostream.stream.merge(*coros):
+            yield offer
 
         # cleaning up on complete for next queries
         self.params['q'] = ''
@@ -56,25 +56,27 @@ class Indeed:
         # I like stats
         self.end = time.time()
 
-    async def _worker(self, listing_url):
+    async def _worker(self, url):
         """
-        Define the worker coroutine, core of the scraper
-        ::yield:: JobOffer
+        Define the work to be done for each listing to extract offers
+        ::async yield:: JobOffer
         """
-        # note that the parent url is still unused
-        listing_body, url = await self.driver.fetch_single(listing_url)
+        async with self.driver.session_() as session:
+            # note that the parent url is still unused 
+            listing_body, url = await self.driver.fetch(url, session)
 
-        # parse listing and request offers
-        async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body)):
-            # parse offers
-            for offer in self.parse_offer(offer_body, offer_url):
-                if offer is not None:
-                    yield offer
+            # TODO: parse offers in coroutines and yield as_completed()
+            # parse listing and request offers
+            async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body), session):
+                # parse offers
+                async for offer in self.parse_offer(offer_url, offer_body):
+                    if offer:
+                        yield offer
 
-    def generate_listing_url(self, pages):
+    def generate_listing_url(self, pages=1):
         """
-        Generates the listing urls by incrementing the start parameter
-        ::yield:: listing urls
+        Generating the listing urls by incrementing self.params['start']
+        ::yield:: listing url
         """
         # generate listing urls
         for i in range(pages):
@@ -82,69 +84,68 @@ class Indeed:
             self.params['start'] += 10
         self.params['start'] = 0
 
-    def parse_listing(self, html):
+    async def parse_listing(self, html):
         """
-        Parse listing pages, extracting offer href
-        ::yield:: urls
+        Parse listing pages
+        ::yield:: offer url
         """
-        soup = bs(html, features="lxml")
+        # TODO : extract the job id or create a hash from title+company
+        # and compare that to the database before fetching the page.
 
-        # extracting job titles containing the offer's href
-        for a in soup.find_all("a", class_="jobtitle"):
-            offer_url = a['href']
+        root = lxml.html.fromstring(html)
 
-            # check if url has already been scraped
-            if offer_url not in self.seen_url:
-                # keeping track of scraped urls
-                self.seen_url.append(offer_url)
-                # href is added to the base url
-                yield self.BASE_URL + offer_url
+        # select all <a>
+        all_a = root.xpath('//a[contains(@class, "jobtitle")]')
+        for a in all_a:
+            offer_href = a.attrib['href']
+
             # skipping seen offers
+            if offer_href not in self.seen_url:
+                self.seen_url.append(offer_href)
+                offer_url = self.BASE_URL + offer_href
+                yield offer_url
             else:
                 self.skipped += 1
 
-    def parse_offer(self, html, url):
+    async def parse_offer(self, url, html):
         """
-        Parse offers page, nltk is used at the end to extract and sanitise
-        fields that could't be extracted with beautifulsoup.
+        Parse offers page, 
         ::yield::: Offer
         """
-        soup = bs(html, features="lxml")
+        # TODO :
+        # Better parsing for company name
+
+        # performance bottleneck
+        root = lxml.html.fromstring(html)
 
         # extracting offer description
-        corpus = corpus = soup.find("div", class_="jobsearch-jobDescriptionText")
-        if corpus:
-            corpus = corpus.text
+        description = root.xpath('//div[@id="jobDescriptionText"]')
+        description = ' '.join(node.text_content() for node in description) or None
 
         # extracting the job title
-        title = soup.find("h3")
-        if title:
-            title = title.text
+        title = root.xpath('//h3')
+        title = ' '.join(node.text_content() for node in title) or None
 
-        # extracting company name
-        company = soup.find("div", class_="icl-u-lg-mr--sm")
-        if company:
-            company = company.text
+        # extracting company name 
+        company = root.xpath('//div[contains(@class, "icl-u-lg-mr--sm")]')
+        company = ' '.join(node.text_content() for node in company) or None
 
         # extracting salary
-        salary = soup.find("div", class_="icl-IconFunctional--salary")
-        if salary:
-            salary = salary.parent.find("span", class_="jobsearch-JobMetadataHeader-iconLabel").text
+        salary = root.xpath('//div[contains(@class, "icl-IconFunctional--salary")]/parent::*')
+        salary = ' '.join(node.text_content() for node in salary) or None
 
         # extracting location
-        location = soup.find("div", class_="icl-IconFunctional--location")
-        if location:
-            location = location.parent.find("span", class_="jobsearch-JobMetadataHeader-iconLabel").text
+        location = root.xpath('//div[contains(@class, "icl-IconFunctional--location")]/parent::*')
+        location = ' '.join(node.text_content() for node in location) or None
 
         # extracting job type
-        type_ = soup.find("div", class_="icl-IconFunctional--jobs")
-        if type_:
-            type_ = type_.parent.find("span", class_="jobsearch-JobMetadataHeader-iconLabel").text
+        type_ = root.xpath('//div[contains(@class, "icl-IconFunctional--jobs")]/parent::*')
+        type_ = ' '.join(node.text_content() for node in type_) or None
 
         # extracting relative date
-        date = soup.find("div", class_="jobsearch-JobMetadataFooter")
+        date = root.xpath('//div[contains(@class, "jobsearch-JobMetadataFooter")]')
         if date:
-            date = date.text.lower()
+            date = ' '.join(node.text_content() for node in date).lower()
             # if it was posted today
             if "today" in date or "just posted" in date:
                 date = 0
@@ -153,20 +154,38 @@ class Indeed:
                     if n.isdigit():
                         date = n
 
+        """
+        # TODO :
         # extracting the apply link
-        apply_link = soup.find('a', class_="icl-Button")
+        button_div = root.xpath('//div[@id="indeedApplyButtonContainer"]/child::span')
+        try:
+            span = lxml.html.tostring(button_div[0])
+            # job id, company name and job title is in span
+            try:
+                
+                print(span)
+                print("WORKED")
+            except:
+                print("URL")
+        except:
+            if button_div:
+                print("FUCKED")
+                print(lxml.html.tostring(button_div[0]))
+            else:
+                print("MEGA FUCKED")
+        """
+        apply_link = root.xpath('//a[contains(@class, "icl-Button")]')
         if apply_link:
-            apply_link = apply_link['href']
+            apply_link = apply_link[0].attrib['href']
             # for apply with indeed, the href is generated by javascript
             # TODO : work this out
             if apply_link == '/promo/resume':
                 apply_link = url
-
-        new_offer = Offer(title, company, salary, location, type_, date, corpus, url, apply_link)
-
-        yield new_offer
-        # further parsing and analysing
-        #yield self.nltk_.analyse(new_offer)
+    
+        new_offer = Offer(title, company, salary, location, type_, date, description, url, apply_link)
+        
+        # further parsing and analysing 
+        yield self.nltk_.analyse(new_offer)
 
     def stats(self):
         nb_expected = self.depth * 19    # 19 ads per listings
@@ -180,37 +199,43 @@ if __name__ == "__main__":
     import sys
 
     query = sys.argv[1]
+    if not query:
+        print("Please provide query string in argument")
+        exit(1)
 
+    # example function on how to use the scraper
     async def main():
-
-        depth = 2
-
+        depth = 5
         indeed = Indeed(depth)
-        expected = depth * 19
 
-        offers = []
         async for offer in indeed.query(query):
-            print(offer)
+            print(offer.title, offer.company, offer.salary)
+            pass
+        print(indeed.stats())
+            #print(offer)
 
             #offers.append(offer)
-        """
+    """
         for offer in offers:
             if offer is None or offer.salary is None:
                 offers.remove(offer)
 
         soffers = sorted(offers, key=lambda x: x.salary[0] if x.salary[0] else x.salary, reverse=True)
-
+        
         for offer in soffers:
-            title, company, salary, location, type_, date, txt, url, link, skills = offer
+            title, company, salary, location, type_, date, txt, url, link, skills = offer 
             if salary == '0':
+                print("Dropped")
                 continue
-            if int(salary[len(salary)-1]) < 21944:
-                continue
+            #if int(salary[len(salary)-1]) < 21944:
+             #   continue
             print(f'\n{title}\nCompany: {company}\nType: {type_}\nSalary: {salary}')
             print(f'Skills: {skills}')
         print(indeed.stats())
     """
+    # run the test
     loop=asyncio.get_event_loop()
     loop.run_until_complete(main())
     loop.close()
+    # Or:
     #asyncio.run(main())
