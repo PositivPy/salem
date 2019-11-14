@@ -12,17 +12,19 @@ Offer = collections.namedtuple('JobOffer', 'title company salary location \
                                          defaults=(0,))
 
 class Indeed:
+    """ Indeed scraper class """
 
     BASE_URL = "https://www.indeed.co.uk"
 
     import http_ as driver
     from nltk_ import IndeedNLTK 
+    # could make it async
     nltk_ = IndeedNLTK()
 
     def __init__(self, depth=1, location='London', fromage=14):
-
         self.depth = depth
-
+        self.seen_url = []
+        
         self.params = {
             'q': '',
             'l': location,
@@ -31,16 +33,7 @@ class Indeed:
             'fromage': fromage      # only results under 2, 7, 14 days 
         }
 
-        self.seen_url = []
-
-        # for stats
-        self.skipped = int()
-        self.start = int()
-        self.end = int()
-
     async def query(self, query):
-        self.start = time.time()
-
         self.params['q'] = query
 
         # create worker coroutines for each listing pages
@@ -52,9 +45,6 @@ class Indeed:
 
         # cleaning up on complete for next queries
         self.params['q'] = ''
-
-        # I like stats
-        self.end = time.time()
 
     async def _worker(self, url):
         """
@@ -69,7 +59,7 @@ class Indeed:
             # parse listing and request offers
             async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body), session):
                 # parse offers
-                async for offer in self.parse_offer(offer_url, offer_body):
+                for offer in self.parse_offer(offer_url, offer_body):
                     if offer:
                         yield offer
 
@@ -84,7 +74,7 @@ class Indeed:
             self.params['start'] += 10
         self.params['start'] = 0
 
-    async def parse_listing(self, html):
+    def parse_listing(self, html):
         """
         Parse listing pages
         ::yield:: offer url
@@ -104,10 +94,8 @@ class Indeed:
                 self.seen_url.append(offer_href)
                 offer_url = self.BASE_URL + offer_href
                 yield offer_url
-            else:
-                self.skipped += 1
 
-    async def parse_offer(self, url, html):
+    def parse_offer(self, url, html):
         """
         Parse offers page, 
         ::yield::: Offer
@@ -187,55 +175,27 @@ class Indeed:
         # further parsing and analysing 
         yield self.nltk_.analyse(new_offer)
 
-    def stats(self):
-        nb_expected = self.depth * 19    # 19 ads per listings
-        nb_fetch = len(self.seen_url)
-        total_time = self.end - self.start
-        return f'Finished crawling {self.depth} listing in {total_time}\
-                \nExpected: {nb_expected} Got: {nb_fetch} Skipped: {self.skipped}'
-
-
 if __name__ == "__main__":
-    import sys
+    import sys 
 
-    query = sys.argv[1]
-    if not query:
+    try:
+        query = sys.argv[1]
+    except IndexError:
         print("Please provide query string in argument")
         exit(1)
 
     # example function on how to use the scraper
-    async def main():
+    async def test():
         depth = 5
         indeed = Indeed(depth)
 
         async for offer in indeed.query(query):
-            print(offer.title, offer.company, offer.salary)
+            #print(offer.title, offer.company, offer.salary)
             pass
-        print(indeed.stats())
-            #print(offer)
 
-            #offers.append(offer)
-    """
-        for offer in offers:
-            if offer is None or offer.salary is None:
-                offers.remove(offer)
-
-        soffers = sorted(offers, key=lambda x: x.salary[0] if x.salary[0] else x.salary, reverse=True)
-        
-        for offer in soffers:
-            title, company, salary, location, type_, date, txt, url, link, skills = offer 
-            if salary == '0':
-                print("Dropped")
-                continue
-            #if int(salary[len(salary)-1]) < 21944:
-             #   continue
-            print(f'\n{title}\nCompany: {company}\nType: {type_}\nSalary: {salary}')
-            print(f'Skills: {skills}')
-        print(indeed.stats())
-    """
     # run the test
     loop=asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.run_until_complete(test())
     loop.close()
     # Or:
     #asyncio.run(main())

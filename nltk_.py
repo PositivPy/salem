@@ -60,7 +60,7 @@ class IndeedNLTK:
 
         # pass unavailable salaries
         if salary is None:
-            return '0'
+            return ['0']
 
         # delete '-', '£' and ','
         salary = salary.replace('-', '').replace('£', '').replace(',', '')
