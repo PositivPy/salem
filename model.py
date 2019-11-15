@@ -2,12 +2,17 @@
 
 import asyncio 
 import aiosqlite
-
+import os
 import collections
+
+# is this the right place for this ?
+# should I just make a generic offer (not only for jobs) ?
+# TODO: add query or query hash in there
 Offer = collections.namedtuple('JobOffer', 'title company salary location \
                                          type_ date txt url link skills',
                                          defaults=(0,))
 
+# TODO : move aioObject somewhere else
 class aioObject(object):
     """ Inheriting this class allows you to define an async __init__.
     So you can create objects by doing something like 'await MyClass(params)'
@@ -24,7 +29,10 @@ class aioObject(object):
 class AsyncDB(aioObject):
     """ Async aiosqlite database """
     async def __init__(self, name):
-        self.name = name 
+        # get current dir
+        dir = os.getcwd()
+        # build database dir 
+        self.name = f'{dir}/data/{name}' 
     
         self.con = None
         self.cursor = None
@@ -33,10 +41,7 @@ class AsyncDB(aioObject):
         await self.create_table()
 
     def work(func):
-        """ Async decorator:
-        Inittialises the db connection and cursor before the db calls 
-        Close the connection once done
-        """
+        """ Async decorator: opening the database in a context manager before use """
         async def _wraper(*args):
             # decorator in class : extract self from function args
             self = args[0]
@@ -48,7 +53,7 @@ class AsyncDB(aioObject):
 
     @work
     async def create_table(self):
-        """ Create table """
+        """ Create the database's tables """
         await self.cursor.execute('''CREATE TABLE if not exists Jobs (
                                         title, company, salary, location, type, 
                                         date, description, url, apply_link, skills)''')

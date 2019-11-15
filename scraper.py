@@ -7,9 +7,15 @@ import aiostream
 import time
 import lxml.html
 
-Offer = collections.namedtuple('JobOffer', 'title company salary location \
-                                         type_ date txt url link skills',
-                                         defaults=(0,))
+class Offer(collections.namedtuple('JobOffer',  'title company salary location \
+                                    type_ date txt url link skills',
+                                    defaults=(0,))):
+    def __eq__(self, other):
+        """ Job offers are equal if the title and company of the offers are the same """
+        if self.title.lower() == other.title.lower() and self.company.lower() == other.company.lower():
+            return True
+        else:
+            return False
 
 class Indeed:
     """ Indeed scraper class """
@@ -190,8 +196,7 @@ if __name__ == "__main__":
         indeed = Indeed(depth)
 
         async for offer in indeed.query(query):
-            #print(offer.title, offer.company, offer.salary)
-            pass
+            print(offer.title, offer.company, offer.salary)
 
     # run the test
     loop=asyncio.get_event_loop()
