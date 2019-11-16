@@ -9,17 +9,17 @@ import collections.abc
 import aiostream
 
 # TODO: 
+# -> websocket
 # -> move all the view stuff to view;
 # -> check if query in db + last update (build relational db)  
 # -> move aioObject somewhere else
 # -> add logging (how did I manage so far?)
-# -> add support for double quotes ? (maybe not necessary)
+# -> add support for double quotes and | (maybe not necessary)
 # -> add support for filtering skills
 # -> web view face lift 
 # -> add location to the search (default=London)
 
 # To think about :
-# -> hash the query to store it in the db ?
 # -> auto resume (organise resume automaticaly based on the skills requirements)
 # -> auto apply
 # -> crontab 
@@ -54,6 +54,8 @@ class Controller(aioObject):
         app = web.Application()
         app.add_routes([web.get('/', self.index),
                         web.get('/search/', self.search)])
+        app.router.add_static('/static/', path='./views/static/')
+
         web.run_app(app)
 
     async def index(self, request):
@@ -64,9 +66,9 @@ class Controller(aioObject):
     async def search(self, request):
         """ Display search results """
         # fetching the query from the request's parameters
-        query = request.rel_url.query['q']
+        original_query = request.rel_url.query['q']
 
-        query, params = self.parse_filters(query)
+        query, params = self.parse_filters(original_query)
         parsed_query = self.flatten(self.parse_add_word(query))
 
         offers = []
@@ -87,7 +89,7 @@ class Controller(aioObject):
         # sorting the results by salary
         offers.sort(key=lambda x: int(x.salary[0]), reverse=True)
         # rendering response html
-        html = self.template.render_results(offers)
+        html = self.template.render_results(original_query, offers)
         # updating the web view
         return web.Response(text=html, content_type='text/html')
 

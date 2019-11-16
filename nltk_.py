@@ -9,11 +9,11 @@ qualifications = ['assistant', 'manager', 'supervisor', 'gcse', 'degree', 'appre
 dir = os.getcwd()
 dir = f'{dir}/data/'
 # TODO : Should probably use a db
-f = open(f'{dir}/comp_skills')
+f = open(f'{dir}/comp_skills.txt')
 comp_skills_db = f.read().splitlines()
 f.close()
 
-f = open(f'{dir}/simple_skills')
+f = open(f'{dir}/simple_skills.txt')
 simple_skills_db = f.read().splitlines()
 f.close()
 
