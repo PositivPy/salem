@@ -24,26 +24,27 @@ class Indeed:
 
     import http_ as driver
     from nltk_ import IndeedNLTK 
-    # could make it async
+    # TODO : make it async and move it to controler ?
     nltk_ = IndeedNLTK()
 
-    def __init__(self, depth=1, location='London', fromage=14):
-        self.depth = depth
+    def __init__(self, fromage=14):
+
         self.seen_url = []
         
         self.params = {
             'q': '',
-            'l': location,
+            'l': '',
             'sort': "date",
             'start': 0,
             'fromage': fromage      # only results under 2, 7, 14 days 
         }
 
-    async def query(self, query):
+    async def get(self, query, depth=1, location='London'):
         self.params['q'] = query
+        self.params['l'] = location
 
         # create worker coroutines for each listing pages
-        coros = [self._worker(url) for url in self.generate_listing_url(pages=self.depth)]
+        coros = [self._worker(url) for url in self.generate_listing_url(pages=depth)]
         
         # merge these async generators into a single stream
         async for offer in aiostream.stream.merge(*coros):
@@ -75,7 +76,7 @@ class Indeed:
         ::yield:: listing url
         """
         # generate listing urls
-        for i in range(pages):
+        for _ in range(pages):
             yield self.BASE_URL + "/jobs/?" + urllib.parse.urlencode(self.params)
             self.params['start'] += 10
         self.params['start'] = 0
@@ -120,6 +121,7 @@ class Indeed:
         title = root.xpath('//h3')
         title = ' '.join(node.text_content() for node in title) or None
 
+        # TODO : it's catching the number of reviews as well   
         # extracting company name 
         company = root.xpath('//div[contains(@class, "icl-u-lg-mr--sm")]')
         company = ' '.join(node.text_content() for node in company) or None

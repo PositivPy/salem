@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 
-import argparse
-import sys
-import model, scraper, view
-import asyncio
-from aiohttp import web
-import collections.abc
-import aiostream
+import sys, collections.abc, asyncio, aiostream
+
+import model, view, scraper
 
 # TODO: 
-# -> websocket
-# -> move all the view stuff to view;
-# -> check if query in db + last update (build relational db)  
-# -> move aioObject somewhere else
+# BUG : There is a problem with the scraper not getting every pages 
+# Could be related to session drops or the way the listing urls are generated
+
 # -> add logging (how did I manage so far?)
+
+# -> move nltk to controller
+# -> compare query to db + last update (build relational db)  
+# -> move aioObject somewhere else
+# -> a way to remove doubles 
 # -> add support for double quotes and | (maybe not necessary)
 # -> add support for filtering skills
 # -> web view face lift 
-# -> add location to the search (default=London)
 
 # To think about :
 # -> auto resume (organise resume automaticaly based on the skills requirements)
@@ -27,7 +26,6 @@ import aiostream
 # -> data analysis:
 #       - most skills required
 #       - median and average salary for the query
-# -> delete results in web view ?
 
 class aioObject(object):
     """ Inheriting this class allows you to define an async __init__.
@@ -42,29 +40,29 @@ class aioObject(object):
     async def __init__(self):
         pass
 
-class Controller(aioObject):
-    """ Controlling the scraper's behaviors """
+class App(aioObject):
+    """ Controlling the app's behaviors """
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
-        self.api = scraper.Indeed(depth=2)          # Possible to have multiple api
+        self.api = scraper.Indeed()          # Possible to have multiple api
         self.view = view.WebView(self.search)
 
     def run(self):
         self.view.run()
 
-    async def search(self, query):
+    async def search(self, query, location):
         """ Display search results """
-        # fetching the query from the request's parameters
         original_query = query
 
-        query, params = self.parse_filters(original_query)
-        parsed_query = self.flatten(self.parse_add_word(query))
+        # TODO : in a separate ArgumentParser
+        # parsing the query for filters and add words
+        query, filter = self.parse_filters(original_query)
+        parsed_queries = self.flatten(self.parse_add_word(query))
 
-        async for offer in self.query_api(parsed_query):
-            await self.db.insert(offer)
-            if params:
+        async for offer in self.scrape(parsed_queries, 1, location):
+            if filter:
                 yes = 0
-                for w in params:
+                for w in filter:
                     title = offer.title
                     title = title.lower()
                     if w in title:
@@ -74,17 +72,25 @@ class Controller(aioObject):
             else:
                 yield offer
 
-    async def query_api(self, queries):
-        """ Query the scraper for each query extracted by parsed query """
+    async def scrape(self, queries, depth=1, location='London'):
+        """ Run the scraper for each query in queries
+        Inserts the results into database """
         # TODO : probably move it to the scraper
 
         # create worker coroutines for each queries
-        coros = [self.api.query(q) for q in queries]
+        coros = [self.api.get(query=q, depth=depth, location=location) for q in queries]
         
         # merge these async generators into a single stream
         async for offer in aiostream.stream.merge(*coros):
+            # TODO : nltk should be here
+            await self.db.insert(offer)
             yield offer
 
+    async def retrieve(self, query, location):
+        """ Retrieve results from database """
+        raise NotImplementedError
+
+    # TODO : move all of this to an argument parser
     def flatten(self, x):
         """ Flatten a list of nested list of unknown depth to a simple list """
         if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
@@ -106,12 +112,13 @@ class Controller(aioObject):
                 s_query.append(word)
         return s_query, params
 
-    def parse_add_word(self, query, result=None, params=None):
-        """ Parsing the query string for +words """
+    def parse_add_word(self, query, result=None):
+        """ Parsing the query string for +words 
+        Essentialy creating multiple queries for each words
+        ie: junior developer + analyst = [junior developer, junior analyst]
+        """
         if not result:
             result = []
-        if not params:
-            params = []
         # try to split it on first run
         try:
             query = query.split()
@@ -120,31 +127,31 @@ class Controller(aioObject):
 
         for word in query:
             if '+' in word:
-                word_index = query.index(word)
+                index = query.index(word)
                 # remove the + char
-                query[word_index] = query[word_index].replace('+', '')
+                query[index] = query[index].replace('+', '')
 
                 # current word is +word
-                current_word = query[word_index]
-                previous_word = query[word_index - 1]
+                current_word = query[index]
+                previous_word = query[index - 1]
 
                 # query - +word 
                 original_query = [word for word in query if word != previous_word]
-                # query - word before +word
+                # query - previous_word 
                 added_query = [word for word in query if word != current_word]
 
                 # parsing and returning both new query strings
-                parsed_a = self.parse_add_word(added_query, result, params)
-                parsed_o = self.parse_add_word(original_query, result, params)
+                parsed_a = self.parse_add_word(added_query, result)
+                parsed_o = self.parse_add_word(original_query, result)
                 result.append(parsed_a)
                 result.append(parsed_o)
                 return result
         # flatten the query back to a string 
         queries = ' '.join(query)
-        return queries, params
+        return queries
 
 if __name__ == '__main__':
-    c = asyncio.run(Controller())
+    app = asyncio.run(App())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    c.run()
+    app.run()
