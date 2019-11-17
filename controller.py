@@ -47,51 +47,32 @@ class Controller(aioObject):
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
         self.api = scraper.Indeed(depth=2)          # Possible to have multiple api
-        self.template = view
+        self.view = view.WebView(self.search)
 
-    def web_view(self):
-        """ Start the web view """
-        app = web.Application()
-        app.add_routes([web.get('/', self.index),
-                        web.get('/search/', self.search)])
-        app.router.add_static('/static/', path='./views/static/')
+    def run(self):
+        self.view.run()
 
-        web.run_app(app)
-
-    async def index(self, request):
-        """ Return the index page """
-        html = self.template.render_index()
-        return web.Response(text=html, content_type='text/html')
-
-    async def search(self, request):
+    async def search(self, query):
         """ Display search results """
         # fetching the query from the request's parameters
-        original_query = request.rel_url.query['q']
+        original_query = query
 
         query, params = self.parse_filters(original_query)
         parsed_query = self.flatten(self.parse_add_word(query))
 
-        offers = []
         async for offer in self.query_api(parsed_query):
-            if offer not in offers:
-                await self.db.insert(offer)
-                if params:
-                    yes = 0
-                    for w in params:
-                        title = offer.title
-                        title = title.lower()
-                        if w in title:
-                            yes += 1
-                    if not yes:
-                        offers.append(offer)
-                else:
-                    offers.append(offer)
-        # sorting the results by salary
-        offers.sort(key=lambda x: int(x.salary[0]), reverse=True)
-        # rendering response html
-        html = self.template.render_results(original_query, offers)
-        # updating the web view
-        return web.Response(text=html, content_type='text/html')
+            await self.db.insert(offer)
+            if params:
+                yes = 0
+                for w in params:
+                    title = offer.title
+                    title = title.lower()
+                    if w in title:
+                        yes += 1
+                if not yes:
+                    yield offer
+            else:
+                yield offer
 
     async def query_api(self, queries):
         """ Query the scraper for each query extracted by parsed query """
@@ -166,4 +147,4 @@ if __name__ == '__main__':
     c = asyncio.run(Controller())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    c.web_view()
+    c.run()
