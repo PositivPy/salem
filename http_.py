@@ -37,7 +37,6 @@ async def fetch(url, session):
             # raise exception
             if response.status != 200:
                 response.raise_for_status()
-            res = await response.text()
             return await response.text(), url
     except aiohttp.client_exceptions.ClientConnectorError:
         raise ConnectionInterrupted("No internet connection")

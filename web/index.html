@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+    <head>
+        <script src="/static/handleSocket.js"></script>
+        <link rel="stylesheet" href="/static/styles.css">
+    </head>
+    <header>
+        <div class="center" id="header">
+            <img class="img center" src="/static/img/header_logo.png" alt="zalem">
+            <div align="center">
+                <form action="javascript:socketHandler()">
+                    <div id="inputs"> 
+                        <input id="searchBarQuery" type="text" placeholder="What...">
+                        <input id="searchBarLocation" type="text" placeholder="Where..."       >
+                    </div>
+                    <input id="button" type="image" src="/static/img/search.png" alt="submit">
+                </form>
+            </div>
+        </div>
+    </header>
+    <body>
+        <div id = "results"></div>  
+    </body> 
+</html>

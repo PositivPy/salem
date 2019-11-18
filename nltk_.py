@@ -6,14 +6,14 @@ import os
 
 qualifications = ['assistant', 'manager', 'supervisor', 'gcse', 'degree', 'apprentice', 'clerk', 'master', 'jr', 'senior', 'mid', 'junior', 'grad', 'fullstack', 'graduated', 'graduate']
 
-dir = os.getcwd()
+dir = os.path.dirname(os.path.realpath(__file__))
 dir = f'{dir}/data/'
 # TODO : Should probably use a db
-f = open(f'{dir}/comp_skills.txt')
+f = open(f'{dir}comp_skills.txt')
 comp_skills_db = f.read().splitlines()
 f.close()
 
-f = open(f'{dir}/simple_skills.txt')
+f = open(f'{dir}simple_skills.txt')
 simple_skills_db = f.read().splitlines()
 f.close()
 

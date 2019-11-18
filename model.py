@@ -27,7 +27,7 @@ class AsyncDB(aioObject):
     """ Async aiosqlite database """
     async def __init__(self, name):
         # get current dir
-        dir = os.getcwd()
+        dir = dir = os.path.dirname(os.path.realpath(__file__))
         # build database dir 
         self.name = f'{dir}/data/{name}' 
     

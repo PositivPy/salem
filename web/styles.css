@@ -1,0 +1,72 @@
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  #header {
+      width: 50%;
+  }
+  
+  .img {
+      width: 50%;
+  }
+  
+  .form {
+      display: inline-block;
+      margin: auto;
+  }
+  
+  #inputs,
+  #button {
+      display: inline-block;
+  }
+  
+  input {
+      padding: 8px 15px;
+      border: 1px solid black;
+      border-radius: 20px;
+  }
+  
+  #searchBarLocation {
+      width:10em;
+  }
+  
+  input[type="text"] {
+      font-size: 13px;
+  }
+  
+  #button {
+      width: 2.7%;
+      vertical-align: middle;
+  }
+  
+  #results {
+      margin-top: 15px;
+  }
+  
+  .offers {
+      margin-left: 150px;
+      max-width: 70%;
+      padding: 5px;
+  }
+  
+  h2 {
+      font-size: 20px;
+      color: blue;
+      white-space: pre-wrap;
+      line-height: 0.7;
+  }
+  
+  h3 {
+      font-size: 15px;
+      color: green;
+      white-space: pre-wrap;
+      line-height: 0;
+  }
+  
+  p {
+      font-size: 15px;
+      white-space: pre-wrap;
+      line-height: 1.2;
+  }

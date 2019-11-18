@@ -5,11 +5,13 @@ BUG : There is a problem with the scraper not getting every pages
 Could be related to session drops or the way the listing urls are generated
 from common self.params
 
--> add logging (how did I manage so far?)
+-> add logging 
 
 -> argument parser
--> sort offer divs in js
--> compare query to db + last update (build relational db)  
+
+-> compare query to db + last update (build relational db) 
+=> retrieve from database
+
 -> move aioObject somewhere else
 -> add href to job titles
 -> virtual environement
@@ -22,5 +24,3 @@ To think about :
 -> data analysis:
       - most skills required
       - median and average salary for the query
--> could make an API out of this by sending JSON from socket 
-   rather than formated divs. The formating will be up to the client
