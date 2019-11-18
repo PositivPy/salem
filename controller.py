@@ -22,7 +22,7 @@ class App(aioObject):
     """ Controlling the app's behaviors """
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
-        self.api = scraper.Indeed()                 # Possible to have multiple api via factory class 
+        self.api = scraper.Indeed                 # Possible to have multiple api via factory class 
         self.view = view.WebView(self.search)
 
     def run(self):
@@ -39,13 +39,13 @@ class App(aioObject):
 
         async for offer in self.scrape(parsed_queries, 1, location):
             if filter:
-                yes = 0
+                found = 0
                 for w in filter:
                     title = offer.title
                     title = title.lower()
                     if w in title:
-                        yes += 1
-                if not yes:
+                        found += 1
+                if not found:
                     yield offer
             else:
                 yield offer
@@ -55,7 +55,7 @@ class App(aioObject):
         Inserts the results into database """
 
         # create worker coroutines for each queries
-        coros = [self.api.get(query=q, depth=depth, location=location) for q in queries]
+        coros = [self.api(query=q, depth=depth, location=location).run() for q in queries]
         
         # merge these async generators into a single stream
         async for offer in aiostream.stream.merge(*coros):

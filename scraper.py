@@ -25,24 +25,23 @@ class Indeed:
     # TODO : make it async and move it to controler ?
     nltk_ = IndeedNLTK()
 
-    def __init__(self, fromage=14):
+    def __init__(self, query, depth=1, location='London', fromage=14):
 
         self.seen_url = []
-        
+        self.depth = depth        
+
         self.params = {
-            'q': '',
-            'l': '',
+            'q': query,
+            'l': location,
             'sort': "date",
             'start': 0,
             'fromage': fromage      # only results under 2, 7, 14 days 
         }
 
-    async def get(self, query, depth=1, location='London'):
-        self.params['q'] = query
-        self.params['l'] = location
+    async def run(self):
 
         # create worker coroutines for each listing pages
-        coros = [self._worker(url) for url in self.generate_listing_url(pages=depth)]
+        coros = [self._worker(url) for url in self.generate_listing_url()]
         
         # merge these async generators into a single stream
         async for offer in aiostream.stream.merge(*coros):
@@ -68,13 +67,13 @@ class Indeed:
                     if offer:
                         yield offer
 
-    def generate_listing_url(self, pages=1):
+    def generate_listing_url(self):
         """
         Generating the listing urls by incrementing self.params['start']
         ::yield:: listing url
         """
         # generate listing urls
-        for _ in range(pages):
+        for _ in range(self.depth):
             yield self.BASE_URL + "/jobs/?" + urllib.parse.urlencode(self.params)
             self.params['start'] += 10
         self.params['start'] = 0

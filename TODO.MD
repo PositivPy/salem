@@ -1,10 +1,6 @@
 
 #############################  TODO  ############################### 
 
-BUG : There is a problem with the scraper not getting every pages 
-Could be related to session drops or the way the listing urls are generated
-from common self.params
-
 -> add logging 
 
 -> argument parser
@@ -14,6 +10,7 @@ from common self.params
 
 -> move aioObject somewhere else
 -> add href to job titles
+-> handle connection errors in the webview
 -> virtual environement
 
 To think about :
