@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import asyncio
+
 import aiohttp.web
 
+# TODO : move all the html, css, js to view folder
 header = '''
 <!DOCTYPE html>
 <body>
@@ -12,11 +14,13 @@ search_bar = '''
 <div class="center" id="header">
     <img class="img center" src="/static/header_logo.png" alt="zalem">
     <div align="center">
-    <form action="javascript:querySocket()">
-            <input id="searchBar.query" type="text" placeholder="What...">
-            <input id="searchBar.location" type="text" placeholder="Where..." value="London">
-            <input id="button" type="image" src="/static/search.png" alt="submit">
-    </form>
+        <form action="javascript:querySocket()">
+                <div id="inputs"> 
+                    <input id="searchBarQuery" type="text" placeholder="What...">
+                    <input id="searchBarLocation" type="text" placeholder="Where..."       >
+                </div>
+                <input id="button" type="image" src="/static/search.png" alt="submit">
+        </form>
     </div>
 </div>
 '''
@@ -28,29 +32,52 @@ css = '''
   margin-left: auto;
   margin-right: auto;
 }
-.offers {
-    margin-left: 150px;
-    max-width: 70%;
-}
+
 #header {
     width: 50%;
 }
 
-#button {
-    width: 3%;
-    vertical-align: middle;
-    margin-left: 3px;
+.img {
+    width: 50%;
 }
-input[type="text"] {
-    font-size: 15px;
-}
+
 .form {
     display: inline-block;
     margin: auto;
 }
 
-.img {
-    width: 50%;
+#inputs,
+#button {
+    display: inline-block;
+}
+
+input {
+    padding: 8px 15px;
+    border: 1px solid black;
+    border-radius: 20px;
+}
+
+#searchBarLocation {
+    width:10em;
+}
+
+input[type="text"] {
+    font-size: 13px;
+}
+
+#button {
+    width: 2.7%;
+    vertical-align: middle;
+}
+
+#results {
+    margin-top: 15px;
+}
+
+.offers {
+    margin-left: 150px;
+    max-width: 70%;
+    padding: 5px;
 }
 
 h2 {
@@ -70,6 +97,7 @@ h3 {
 p {
     font-size: 15px;
     white-space: pre-wrap;
+    line-height: 1.2;
 }
 
 </style>
@@ -88,9 +116,15 @@ function querySocket() {
     var Socket = new WebSocket("ws://localhost:8080/search");
     
     Socket.onopen = function() {
-        var query = document.getElementById("searchBar.query").value;
-        var location = document.getElementById("searchBar.location").value;
+        var query = document.getElementById("searchBarQuery").value;
+        var location = document.getElementById("searchBarLocation").value;
 
+        if (!location) {
+            location = "London";
+            var loc = document.getElementById("searchBarLocation");
+            loc.value ="London";
+        }
+        
         var responseObject = {"query" : query, "location" : location};
         var responseJson = JSON.stringify(responseObject)
 
@@ -113,7 +147,6 @@ function querySocket() {
 footer = "</body></html>"
 
 offer_div = '''
-<br>
 <h2>{title}</h2>
 <h3>{company}</h3> 
 <p>Salary: {salary} <br>{skills}</p>
@@ -125,11 +158,13 @@ body = '''
     </div>  
 </body> 
 '''
+
+
 class WebView:
     def __init__(self, controller_interface):
         self.query_controller = controller_interface
 
-    def run(self):
+    def start(self):
         app = aiohttp.web.Application()
         app.add_routes([aiohttp.web.get('/search', self.socket),
                         aiohttp.web.get('/', self.home)])

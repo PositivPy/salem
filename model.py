@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
-import asyncio 
-import aiosqlite
-import os
-import collections
+import os, collections, asyncio 
 
-# is this the right place for this ?
-# should I just make a generic offer (not only for jobs) ?
-# TODO: add query or query hash in there
+import aiosqlite
+
+# TODO : move Offer namedtuple
 Offer = collections.namedtuple('JobOffer', 'title company salary location \
                                          type_ date txt url link skills',
                                          defaults=(0,))

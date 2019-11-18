@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import collections
-import urllib
-import asyncio
-import aiostream
-import time
-import lxml.html
+import collections, asyncio, time
+
+import aiostream, lxml.html, urllib
+
 
 class Offer(collections.namedtuple('JobOffer',  'title company salary location \
                                     type_ date txt url link skills',
@@ -182,6 +180,7 @@ class Indeed:
         
         # further parsing and analysing 
         yield self.nltk_.analyse(new_offer)
+
 
 if __name__ == "__main__":
     import sys 
