@@ -17,6 +17,7 @@ from common self.params
 -> virtual environement
 
 To think about :
+-> replace namedTuples; it's annoying most of the time
 -> a way to remove doubles 
 -> auto resume (organise resume automaticaly based on the skills requirements)
 -> auto apply
