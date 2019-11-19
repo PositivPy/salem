@@ -2,7 +2,7 @@
 
 import sys, collections.abc, asyncio, aiostream
 
-import model, view, scraper
+import model, view, jobs, nlp
 
 
 class aioObject(object):
@@ -22,8 +22,9 @@ class App(aioObject):
     """ Controlling the app's behaviors """
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
-        self.api = scraper.Indeed                 # Possible to have multiple api via factory class 
-        self.view = view.WebView(self.search)
+        self.api = jobs.Interface                   # find a way to change this 
+        self.nlp = nlp
+        self.view = view.WebView(self.search)       # passing self.search as a callback to view
 
     def run(self):
         self.view.start()
@@ -37,7 +38,7 @@ class App(aioObject):
         query, filter = self.parse_filters(original_query)
         parsed_queries = self.flatten(self.parse_add_word(query))
 
-        async for offer in self.scrape(parsed_queries, 1, location):
+        async for offer in self.scrape(parsed_queries, 3, location):
             if filter:
                 found = 0
                 for w in filter:
@@ -59,9 +60,13 @@ class App(aioObject):
         
         # merge these async generators into a single stream
         async for offer in aiostream.stream.merge(*coros):
-            # insert offers in db
-            await self.db.insert(offer)
-            yield offer
+            if offer:
+                # analyse the offer
+                analysed = self.nlp.analyse(offer)
+                # insert offers in db
+                await self.db.insert(analysed)
+
+                yield analysed
 
     async def retrieve(self, query, location):
         """ Retrieve results from database """

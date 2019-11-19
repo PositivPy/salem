@@ -1,5 +1,7 @@
-import aiohttp
 import asyncio
+
+import aiohttp
+from ssl import SSLError
 
 """
 Async HTTP client.
@@ -9,11 +11,6 @@ fetch_all() is an async generator
 class ConnectionInterrupted(Exception):
     pass 
 
-max_connection = 100
-sem = asyncio.Semaphore(max_connection)
-
-connector_ = aiohttp.TCPConnector(keepalive_timeout=None, limit=None,
-                                verify_ssl=False)
 session_ = aiohttp.ClientSession
 
 async def fetch_all(urls, session):
@@ -38,7 +35,9 @@ async def fetch(url, session):
             if response.status != 200:
                 response.raise_for_status()
             return await response.text(), url
-    except aiohttp.client_exceptions.ClientConnectorError:
+
+    except aiohttp.client_exceptions.ClientConnectorError or aiohttp.client_exceptions.ServerDisconnectedError:
         raise ConnectionInterrupted("No internet connection")
-    except aiohttp.client_exceptions.ClientResponseError:
-        return "Server error", "500" 
+
+    except aiohttp.client_exceptions.ClientResponseError or SSLError:
+        raise ConnectionInterrupted("Server response error")

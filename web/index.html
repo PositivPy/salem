@@ -1,14 +1,14 @@
 <!DOCTYPE html>
     <head>
         <title>Salem...</title>
-        <script src="/static/handleSocket.js"></script>
+        <script src="/static/scripts.js"></script>
         <link rel="stylesheet" href="/static/styles.css">
         <link rel="icon" href="/static/img/favicon.png">
     </head>
     <header>
         <div class="center" id="header">
             <img class="img center" src="/static/img/header_logo.png" alt="zalem">
-            <div align="center">
+            <div class="form-input" align="center">
                 <form action="javascript:socketHandler()">
                     <div id="inputs"> 
                         <input id="searchBarQuery" type="text" placeholder="What...">
@@ -20,6 +20,7 @@
         </div>
     </header>
     <body>
+        <div id="loader" class="center"></div>
         <div id = "results"></div>  
     </body> 
 </html>

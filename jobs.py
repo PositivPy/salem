@@ -2,7 +2,7 @@
 
 import collections, asyncio, time
 
-import aiostream, lxml.html, urllib
+import aiostream, urllib, http_
 
 
 class Offer(collections.namedtuple('JobOffer',  'title company salary location \
@@ -15,17 +15,33 @@ class Offer(collections.namedtuple('JobOffer',  'title company salary location \
         else:
             return False
 
+
+class Interface:
+    """ There is a name for this type of class, need to google it.
+    Essentialy is an interface to multiple objects with the same interface
+    """
+    def __init__(self, query, location='London', depth=3):
+        # unpacking args
+        self.query, self.location, self.depth = query, location, depth
+
+        self.indeed = Indeed
+        self.reed = Reed
+    
+    async def run(self):
+        coros = [self.indeed(self.query, self.location, self.depth).run(), self.reed(self.query, self.location).run()]
+
+        async for offer in aiostream.stream.merge(*coros):
+            yield offer
+
+
 class Indeed:
     """ Indeed scraper class """
+    import lxml.html as data_parser
 
     BASE_URL = "https://www.indeed.co.uk"
 
-    import http_ as driver
-    from nltk_ import IndeedNLTK 
-    # TODO : make it async and move it to controler ?
-    nltk_ = IndeedNLTK()
-
-    def __init__(self, query, depth=1, location='London', fromage=14):
+    def __init__(self, query, location='London', depth=1, fromage=14):
+        self.driver = http_
 
         self.seen_url = []
         self.depth = depth        
@@ -50,14 +66,14 @@ class Indeed:
         # cleaning up on complete for next queries
         self.params['q'] = ''
 
-    async def _worker(self, url):
+    async def _worker(self, listing_url):
         """
         Define the work to be done for each listing to extract offers
         ::async yield:: JobOffer
         """
         async with self.driver.session_() as session:
             # note that the parent url is still unused 
-            listing_body, url = await self.driver.fetch(url, session)
+            listing_body, listing_url = await self.driver.fetch(listing_url, session)
 
             # TODO: parse offers in coroutines and yield as_completed()
             # parse listing and request offers
@@ -86,7 +102,7 @@ class Indeed:
         # TODO : extract the job id or create a hash from title+company
         # and compare that to the database before fetching the page.
 
-        root = lxml.html.fromstring(html)
+        root = self.data_parser.fromstring(html)
 
         # select all <a>
         all_a = root.xpath('//a[contains(@class, "jobtitle")]')
@@ -99,7 +115,7 @@ class Indeed:
                 offer_url = self.BASE_URL + offer_href
                 yield offer_url
 
-    def parse_offer(self, url, html):
+    def parse_offer(self, body, url):
         """
         Parse offers page, 
         ::yield::: Offer
@@ -108,7 +124,7 @@ class Indeed:
         # Better parsing for company name
 
         # performance bottleneck
-        root = lxml.html.fromstring(html)
+        root = self.data_parser.fromstring(body)
 
         # extracting offer description
         description = root.xpath('//div[@id="jobDescriptionText"]')
@@ -126,6 +142,24 @@ class Indeed:
         # extracting salary
         salary = root.xpath('//div[contains(@class, "icl-IconFunctional--salary")]/parent::*')
         salary = ' '.join(node.text_content() for node in salary) or None
+        if salary is None:
+            # TODO: try to extract the salary from the description
+            return ['0']
+        # delete '-', '£' and ','
+        salary = salary.replace('-', '').replace('£', '').replace(',', '')
+        # google : (253 working days or 2080 hours per year)
+        for word, multiplier in {'year': 1, 'month': 12, 'week': 52, 'day': 253, 'hour': 2080}.items():
+            if word in salary:
+                # getting rid of the text 
+                salary = salary.replace(word, '').replace('a', '').replace('n', '')
+                for value in salary.split():
+                    # calculating yearly wage 
+                    new_value = str(int(float(value) * multiplier))
+                    salary = salary.replace(value, new_value)
+        try:
+            salary = salary.split()
+        except:
+            pass
 
         # extracting location
         location = root.xpath('//div[contains(@class, "icl-IconFunctional--location")]/parent::*')
@@ -147,26 +181,6 @@ class Indeed:
                     if n.isdigit():
                         date = n
 
-        """
-        # TODO :
-        # extracting the apply link
-        button_div = root.xpath('//div[@id="indeedApplyButtonContainer"]/child::span')
-        try:
-            span = lxml.html.tostring(button_div[0])
-            # job id, company name and job title is in span
-            try:
-                
-                print(span)
-                print("WORKED")
-            except:
-                print("URL")
-        except:
-            if button_div:
-                print("FUCKED")
-                print(lxml.html.tostring(button_div[0]))
-            else:
-                print("MEGA FUCKED")
-        """
         apply_link = root.xpath('//a[contains(@class, "icl-Button")]')
         if apply_link:
             apply_link = apply_link[0].attrib['href']
@@ -178,7 +192,53 @@ class Indeed:
         new_offer = Offer(title, company, salary, location, type_, date, description, url, apply_link)
         
         # further parsing and analysing 
-        yield self.nltk_.analyse(new_offer)
+        yield new_offer
+
+
+class Reed:
+    """ Api for Reed.co.uk"""
+    import json as data_parser
+
+    API_KEY = "51db9ad0-f9cd-4041-b4e1-7bc88b023491"
+    version = 1.0
+    BASE_URL = f'https://www.reed.co.uk/api/{version}'
+
+    def __init__(self, query, location='London'):
+
+        self.driver = http_
+
+        self.params = {
+            'keywords' : query,
+            'location' : location
+        }
+
+    async def run(self):
+        query_url = self.BASE_URL + '/search?' + urllib.parse.urlencode(self.params)
+
+        # define auth
+        api_auth = self.driver.aiohttp.BasicAuth(login=self.API_KEY)
+        async with self.driver.session_(auth=api_auth) as session:
+            listing_body = await self.driver.fetch(query_url, session)
+            async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body), session):
+                for offer in self.parse_offer(offer_body, offer_url):
+                    if offer:
+                        yield offer
+
+    def parse_listing(self, data):
+        json_, url = data
+        json_ = self.data_parser.loads(json_)
+        results = json_['results']
+        for offer in results:
+            offer_url = self.BASE_URL + '/jobs/' + str(offer['jobId'])
+            yield offer_url
+
+    def parse_offer(self, body, url):
+        json_ = self.data_parser.loads(body)
+            
+        new_offer = Offer(json_['jobTitle'], json_['employerName'], [json_['yearlyMinimumSalary'], json_['yearlyMaximumSalary']], 
+                          json_['locationName'], json_['fullTime'], json_['datePosted'], json_['jobDescription'], 
+                          json_['jobUrl'], json_['jobUrl'])
+        yield new_offer
 
 
 if __name__ == "__main__":
@@ -191,16 +251,18 @@ if __name__ == "__main__":
         exit(1)
 
     # example function on how to use the scraper
-    async def test():
+    async def test_indeed():
         depth = 5
-        indeed = Indeed(depth)
+        indeed = Indeed(query , depth=depth)
 
-        async for offer in indeed.query(query):
+        async for offer in indeed.run():
             print(offer.title, offer.company, offer.salary)
 
-    # run the test
+    async def test_reed():
+        reed = Reed("bartender")
+        async for offer in reed.run():
+            print(offer.title, offer.txt)
+
     loop=asyncio.get_event_loop()
-    loop.run_until_complete(test())
+    loop.run_until_complete(test_reed())
     loop.close()
-    # Or:
-    #asyncio.run(main())

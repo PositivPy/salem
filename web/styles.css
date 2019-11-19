@@ -9,9 +9,10 @@
   }
   
   .img {
+      padding-bottom: 10px;
       width: 50%;
   }
-  
+
   .form {
       display: inline-block;
       margin: auto;
@@ -60,7 +61,7 @@
   
   h3 {
       font-size: 15px;
-      color: green;
+      color: #01ed02;
       white-space: pre-wrap;
       line-height: 0;
   }
@@ -69,4 +70,20 @@
       font-size: 15px;
       white-space: pre-wrap;
       line-height: 1.2;
+  }
+
+  #loader {
+    margin-top: 15px;
+    display: none;
+    border: 8px solid black; /* Light grey */
+    border-top: 8px solid #01ed02;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }

@@ -50,7 +50,7 @@ class AsyncDB(aioObject):
 
     @work
     async def create_table(self):
-        """ Create the database's tables """
+        """ Create the database's tables if they do not exist"""
         await self.cursor.execute('''CREATE TABLE if not exists Jobs (
                                         title, company, salary, location, type, 
                                         date, description, url, apply_link, skills)''')
@@ -67,6 +67,8 @@ class AsyncDB(aioObject):
         except aiosqlite.OperationalError:
             print(f"Insert error with : {offer}")
         
+        except AttributeError:
+            print(f"Insert error with : {offer}")
         return await self.con.commit()
 
     @work
