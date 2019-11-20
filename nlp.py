@@ -11,13 +11,13 @@ def retrieve_file(name):
     work_dir = f'{dir}/data'
 
     f = open(f'{work_dir}/{name}')
-    content = f.read().splitlines()
+    content = f.read()
     f.close()
 
     return content
 
-comp_skills_db = retrieve_file('comp_skills.txt')
-simple_skills_db = retrieve_file('simple_skills.txt') + qualifications
+comp_skills_db = retrieve_file('comp_skills.txt').splitlines()
+simple_skills_db = retrieve_file('simple_skills.txt').splitlines() + qualifications
 
 def analyse(offer):
     """
@@ -37,6 +37,7 @@ def analyse(offer):
     return new_offer
 
 def extract_skills(text):
+    # TODO : add frequency analysis
     text = text.lower()
     # get the composite keywords
     composite = [composite for composite in comp_skills_db if composite in text]

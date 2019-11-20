@@ -27,6 +27,7 @@ class aioObject(object):
 
 class AsyncDB(aioObject):
     """ Async aiosqlite database """
+    
     async def __init__(self, name):
         # get current dir
         dir = dir = os.path.dirname(os.path.realpath(__file__))
@@ -82,30 +83,20 @@ class AsyncDB(aioObject):
 
 if __name__=="__main__":
     import sys
-    import scraper
 
+    extension = '.db'
+
+    name = ''
     try:
-        query = sys.argv[1]
+        name = sys.argv[1] + extension
     except IndexError:
-        print("Please provide query string as first argument")
+        print("Name of the database as first argument")
         exit(1)
-
-    name = "test"
 
     # define async test function 
     async def test(name):
-        indeed = scraper.Indeed(depth=5)
         db = await AsyncDB(name)
-
-        async for offer in indeed.query(query):
-            await db.insert(offer)
-
-        all_offers = await db.get_all() 
-        for offer in all_offers:
-            fields = [field for field in offer]
-            offer = Offer(*fields)
-            if offer.salary != '0':
-                print(f'\n{offer.title}\n{offer.salary}\n{offer.skills}')
+        log.info("Database created in /data")
     
     # run test function
     asyncio.run(test(name))

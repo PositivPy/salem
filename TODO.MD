@@ -6,18 +6,14 @@
 ==> disable the button or find a way to cancel the request 
 
 # urgent #
--> add logging 
--> add argument parser
 -> move aioObject somewhere else
-
-# logic #
 -> compare query to db + last update (build relational db) 
 => retrieve from database
 
 # view #
 -> remove doubles in js 
 -> add href to job titles
--> handle connection errors in the webview
+-> handle errors in the webview
 
 # nlp #
 -> parse qualifications from description

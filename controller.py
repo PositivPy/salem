@@ -6,6 +6,7 @@ import model, views, jobs, nlp
 
 log = logging.getLogger(__file__)
 
+
 class aioObject(object):
     """ Inheriting this class allows you to define an async __init__.
     So you can create objects by doing something like 'await MyClass(params)'
@@ -22,9 +23,10 @@ class aioObject(object):
 
 class App(aioObject):
     """ Controlling the app's behaviors """
+
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
-        self.api = jobs.Interface                   # find a way to change this 
+        self.api = jobs.Interface                   # Dfferent interface too
         self.nlp = nlp
         self.view = views.WebView(self.search)       # passing self.search as a callback to view
 
