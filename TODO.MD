@@ -1,8 +1,11 @@
 
 #############################  TODO  ############################### 
 
+# BUG #
+-> can click multiple times on search thus getting the same results mutliple times 
+==> disable the button or find a way to cancel the request 
+
 # urgent #
--> move nltk to controler
 -> add logging 
 -> add argument parser
 -> move aioObject somewhere else
@@ -15,7 +18,6 @@
 -> remove doubles in js 
 -> add href to job titles
 -> handle connection errors in the webview
--> loading gif thingy for added responsiveness
 
 # nlp #
 -> parse qualifications from description
@@ -24,8 +26,11 @@
 # organisation #
 -> virtual environement
 -> README.MD
+-> move everything to a /src
 
 # To think about #
+-> a way to cancel query
+-> ask Indeed for api key again 
 -> replace namedTuples; it's annoying most of the time ; Dataframe might be Big-O expensive tho
 -> auto resume (organise resume automaticaly based on the skills requirements) or % of match 
       => just like job scan : https://www.jobscan.co

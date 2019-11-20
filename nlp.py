@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 
-import string
-import asyncio
-import os 
+import asyncio, os 
 
-# TODO : add qualification
+# TODO : add qualification to a separate field
 qualifications = ['assistant', 'manager', 'supervisor', 'gcse', 'degree', 'apprentice', 'clerk', 'master', 'jr', 'senior', 'mid', 'junior', 'grad', 'fullstack', 'graduated', 'graduate']
 
-dir = os.path.dirname(os.path.realpath(__file__))
-dir = f'{dir}/data/'
-# TODO : Should probably use a db
-f = open(f'{dir}comp_skills.txt')
-comp_skills_db = f.read().splitlines()
-f.close()
+def retrieve_file(name):
+    # getting the real path of this file 
+    dir = os.path.dirname(os.path.realpath(__file__))
+    work_dir = f'{dir}/data'
 
-f = open(f'{dir}simple_skills.txt')
-simple_skills_db = f.read().splitlines()
-f.close()
+    f = open(f'{work_dir}/{name}')
+    content = f.read().splitlines()
+    f.close()
 
+    return content
+
+comp_skills_db = retrieve_file('comp_skills.txt')
+simple_skills_db = retrieve_file('simple_skills.txt') + qualifications
 
 def analyse(offer):
     """

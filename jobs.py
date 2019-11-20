@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import collections, asyncio, time
+import collections, asyncio, time, logging
 
 import aiostream, urllib, http_
 
+log = logging.getLogger(__file__)
 
 class Offer(collections.namedtuple('JobOffer',  'title company salary location \
                                     type_ date txt url link skills',
@@ -28,14 +29,17 @@ class Interface:
         self.reed = Reed
     
     async def run(self):
-        coros = [self.indeed(self.query, self.location, self.depth).run(), self.reed(self.query, self.location).run()]
+        coros = [ self.indeed(self.query, self.location, self.depth).run(), 
+                  self.reed(self.query, self.location).run()
+                ]
 
         async for offer in aiostream.stream.merge(*coros):
             yield offer
 
 
 class Indeed:
-    """ Indeed scraper class """
+    """ Indeed.co.uk scraper """
+
     import lxml.html as data_parser
 
     BASE_URL = "https://www.indeed.co.uk"
@@ -44,7 +48,8 @@ class Indeed:
         self.driver = http_
 
         self.seen_url = []
-        self.depth = depth        
+        self.depth = depth      
+        self.query = query  
 
         self.params = {
             'q': query,
@@ -71,11 +76,12 @@ class Indeed:
         Define the work to be done for each listing to extract offers
         ::async yield:: JobOffer
         """
+        log.debug(f'Working on: {listing_url}')
+
         async with self.driver.session_() as session:
             # note that the parent url is still unused 
             listing_body, listing_url = await self.driver.fetch(listing_url, session)
 
-            # TODO: parse offers in coroutines and yield as_completed()
             # parse listing and request offers
             async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body), session):
                 # parse offers
@@ -106,6 +112,10 @@ class Indeed:
 
         # select all <a>
         all_a = root.xpath('//a[contains(@class, "jobtitle")]')
+
+        found = len(all_a)
+        log.info(f'{self.query} Found {found} on Indeed.co.uk')
+
         for a in all_a:
             offer_href = a.attrib['href']
 
@@ -196,7 +206,8 @@ class Indeed:
 
 
 class Reed:
-    """ Api for Reed.co.uk"""
+    """ Api wraper for Reed.co.uk"""
+
     import json as data_parser
 
     API_KEY = "51db9ad0-f9cd-4041-b4e1-7bc88b023491"
@@ -204,6 +215,7 @@ class Reed:
     BASE_URL = f'https://www.reed.co.uk/api/{version}'
 
     def __init__(self, query, location='London'):
+        self.query = query
 
         self.driver = http_
 
@@ -217,7 +229,10 @@ class Reed:
 
         # define auth
         api_auth = self.driver.aiohttp.BasicAuth(login=self.API_KEY)
+
+        # pass the auth to the http session
         async with self.driver.session_(auth=api_auth) as session:
+            # listing body is json string
             listing_body = await self.driver.fetch(query_url, session)
             async for offer_body, offer_url in self.driver.fetch_all(self.parse_listing(listing_body), session):
                 for offer in self.parse_offer(offer_body, offer_url):
@@ -228,6 +243,10 @@ class Reed:
         json_, url = data
         json_ = self.data_parser.loads(json_)
         results = json_['results']
+
+        found = len(results)
+        log.info(f'{self.query} - Found {found} on Reed.co.uk')
+
         for offer in results:
             offer_url = self.BASE_URL + '/jobs/' + str(offer['jobId'])
             yield offer_url
@@ -250,16 +269,14 @@ if __name__ == "__main__":
         print("Please provide query string in argument")
         exit(1)
 
-    # example function on how to use the scraper
+    # TODO: move all of these to a /test
     async def test_indeed():
-        depth = 5
-        indeed = Indeed(query , depth=depth)
-
+        indeed = Indeed(query)
         async for offer in indeed.run():
             print(offer.title, offer.company, offer.salary)
 
     async def test_reed():
-        reed = Reed("bartender")
+        reed = Reed(query)
         async for offer in reed.run():
             print(offer.title, offer.txt)
 

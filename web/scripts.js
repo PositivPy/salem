@@ -1,24 +1,3 @@
-function sortResults() {
-    // https://stackoverflow.com/questions/5066925/javascript-only-sort-a-bunch-of-divs
-    var toSort = document.getElementById('results').children;
-    toSort = Array.prototype.slice.call(toSort, 0);
-
-    toSort.sort(function(a, b) {
-        // a and b are offer divs
-        var aord = +a.getAttribute("salary");
-        var bord = +b.getAttribute("salary");
-
-        return (aord <= bord) ? 1 : -1;
-    });
-
-    var parent = document.getElementById('results');
-    parent.innerHTML = "";
-
-    for(var i = 0, l = toSort.length; i < l; i++) {
-        parent.appendChild(toSort[i]);
-    }
-}
-
 function socketHandler() {
     toggleLoaderOn()
     var resultDiv = document.getElementById("results");
@@ -65,6 +44,27 @@ function socketHandler() {
         resultDiv.appendChild(offer);
         // each time we add an offer, we sort them by salary
         sortResults()
+    }
+}
+
+function sortResults() {
+    // https://stackoverflow.com/questions/5066925/javascript-only-sort-a-bunch-of-divs
+    var toSort = document.getElementById('results').children;
+    toSort = Array.prototype.slice.call(toSort, 0);
+
+    toSort.sort(function(a, b) {
+        // a and b are offer divs
+        var aord = +a.getAttribute("salary");
+        var bord = +b.getAttribute("salary");
+
+        return (aord <= bord) ? 1 : -1;
+    });
+
+    var parent = document.getElementById('results');
+    parent.innerHTML = "";
+
+    for(var i = 0, l = toSort.length; i < l; i++) {
+        parent.appendChild(toSort[i]);
     }
 }
 

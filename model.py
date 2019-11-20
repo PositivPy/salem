@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import os, collections, asyncio 
+import os, collections, asyncio, logging
 
 import aiosqlite
+
+log = logging.getLogger(__file__)
 
 # TODO : move Offer namedtuple
 Offer = collections.namedtuple('JobOffer', 'title company salary location \

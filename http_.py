@@ -1,7 +1,9 @@
-import asyncio
+import asyncio, logging
 
 import aiohttp
-from ssl import SSLError
+from ssl import SSLError, SSLCertVerificationError
+
+log = logging.getLogger(__file__)
 
 """
 Async HTTP client.
@@ -12,6 +14,8 @@ class ConnectionInterrupted(Exception):
     pass 
 
 session_ = aiohttp.ClientSession
+
+count = 0
 
 async def fetch_all(urls, session):
     """
@@ -29,6 +33,11 @@ async def fetch(url, session):
     Fetch single url
     ::async return:: body, url
     """
+    global count
+    count += 1
+    
+    log.debug(f'Fetching {count}')
+
     try:
         async with session.get(url) as response:
             # raise exception
@@ -37,7 +46,7 @@ async def fetch(url, session):
             return await response.text(), url
 
     except aiohttp.client_exceptions.ClientConnectorError or aiohttp.client_exceptions.ServerDisconnectedError:
-        raise ConnectionInterrupted("No internet connection")
+        log.critical("No internet connection")
 
-    except aiohttp.client_exceptions.ClientResponseError or SSLError:
-        raise ConnectionInterrupted("Server response error")
+    except aiohttp.client_exceptions.ClientResponseError or SSLError or SSLCertVerificationError:
+        log.critical("Server response error")

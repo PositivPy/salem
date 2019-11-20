@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import asyncio, os
+import asyncio, os, logging
 
 import aiohttp.web
 
+log = logging.getLogger(__file__)
 
 class WebView:
+    """ aiohttp server for website and websocket api """
     
     def __init__(self, controller_interface):
         self.query_controller = controller_interface
@@ -30,12 +32,13 @@ class WebView:
         # create a socket
         ws = aiohttp.web.WebSocketResponse()
         await ws.prepare(request)
-        print("Websocket ready !")
+        log.debug("Websocket open")
 
         # client sends the query as json as soon as the connection is open
         data = None
         async for msg in ws :
             data = msg.json()       #  = {'query' : _, 'location': _ }
+            log.info("Query received")
             break
 
         async for offer in self.query_controller(data['query'], data['location']):
@@ -48,8 +51,9 @@ class WebView:
 
         # close the websocket once done 
         await ws.close()
-        print("Websocket closed.")
+        log.debug("Websocket closed")
 
     async def index(self, request):
+        log.info("Index requested")
         return aiohttp.web.Response(text=self.index_html, content_type='text/html')
 

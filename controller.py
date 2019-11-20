@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import sys, collections.abc, asyncio, aiostream
+import sys, collections.abc, asyncio, aiostream, logging
 
-import model, view, jobs, nlp
+import model, views, jobs, nlp
 
+log = logging.getLogger(__file__)
 
 class aioObject(object):
     """ Inheriting this class allows you to define an async __init__.
@@ -18,13 +19,14 @@ class aioObject(object):
     async def __init__(self):
         pass
 
+
 class App(aioObject):
     """ Controlling the app's behaviors """
     async def __init__(self):
         self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
         self.api = jobs.Interface                   # find a way to change this 
         self.nlp = nlp
-        self.view = view.WebView(self.search)       # passing self.search as a callback to view
+        self.view = views.WebView(self.search)       # passing self.search as a callback to view
 
     def run(self):
         self.view.start()
@@ -37,8 +39,8 @@ class App(aioObject):
         # parsing the query for filters and add words
         query, filter = self.parse_filters(original_query)
         parsed_queries = self.flatten(self.parse_add_word(query))
-
-        async for offer in self.scrape(parsed_queries, 3, location):
+        log.info(f'Query: {parsed_queries} Filter: {filter}')
+        async for offer in self.scrape(parsed_queries, 5, location):
             if filter:
                 found = 0
                 for w in filter:
@@ -54,6 +56,7 @@ class App(aioObject):
     async def scrape(self, queries, depth=1, location='London'):
         """ Run the scraper for each query in queries
         Inserts the results into database """
+        log.debug("Scraping started")
 
         # create worker coroutines for each queries
         coros = [self.api(query=q, depth=depth, location=location).run() for q in queries]
@@ -131,6 +134,7 @@ class App(aioObject):
         # flatten the query back to a string 
         queries = ' '.join(query)
         return queries
+
 
 if __name__ == '__main__':
     app = asyncio.run(App())
