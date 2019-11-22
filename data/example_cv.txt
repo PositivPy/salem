@@ -1,4 +1,4 @@
-
+documentation,graduate,numpy,programming,linux,finance,research,python,junior,statistics,science,scipy,jenkins,engineering,servers,support,continuous integration,financial services,communication skills
 
 Jim March
 Sometown, NY 55555 | 555-555-5555 | jm@somedomain.com | LinkedIn URL | Twitter Handle

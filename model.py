@@ -8,7 +8,7 @@ log = logging.getLogger(__file__)
 
 # TODO : move Offer namedtuple
 Offer = collections.namedtuple('JobOffer', 'title company salary location \
-                                         type_ date txt url link skills',
+                                         type_ date txt url link skills matched',
                                          defaults=(0,))
 
 # TODO : move aioObject somewhere else
@@ -56,17 +56,17 @@ class AsyncDB(aioObject):
         """ Create the database's tables if they do not exist"""
         await self.cursor.execute('''CREATE TABLE if not exists Jobs (
                                         title, company, salary, location, type, 
-                                        date, description, url, apply_link, skills)''')
+                                        date, description, url, apply_link, skills, matched)''')
         return await self.con.commit()
 
     @work
     async def insert(self, offer):
         """ Insert row into the database """
-        insert = "INSERT INTO Jobs VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
+        insert = "INSERT INTO Jobs VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
         try:
             await self.cursor.execute(insert, (offer.title, offer.company, f'{offer.salary}',
                                             offer.location, offer.type_, offer.date,
-                                            offer.txt, offer.url, offer.link, f'{offer.skills}'))
+                                            offer.txt, offer.url, offer.link, f'{offer.skills}', f'{offer.matched}'))
         except aiosqlite.OperationalError:
             print(f"Insert error with : {offer}")
         

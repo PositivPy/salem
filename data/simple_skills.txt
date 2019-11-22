@@ -1,3 +1,10 @@
+passion
+innovation
+competitive
+inspire
+proactive
+programming
+vision
 cocktail
 coffee
 flair
@@ -60,6 +67,7 @@ publications
 terraform
 negotiation
 etl
+flask
 flash
 rdbms
 entertainment
@@ -122,6 +130,7 @@ scikit-learn
 json 
 kubernetes
 modile
+hosting
 illustration
 wireshark
 encryption
@@ -147,6 +156,7 @@ wireframing
 objective-c
 reconciliations 
 derivatives
+maintenance
 mailchimp
 science
 middleware
@@ -167,11 +177,16 @@ node.js
 logistics
 routers
 shopify
+tornado
 layout
 economics
 composer
 babeljs
 payroll
+photoshop
+indesign
+illustrator
+ssl
 heroku
 https
 wordpress
@@ -266,7 +281,6 @@ underwriting
 html5
 java
 ux
-html+css
 merchandising
 bluetooth
 test
@@ -344,6 +358,7 @@ financial
 construction
 utilities
 ruby
+drive
 ajax   
 sketching
 advertising
@@ -352,6 +367,7 @@ infrastructure
 robotics
 frameworks
 opencv
+organisation
 organization
 events
 pmp

@@ -31,20 +31,66 @@ function socketHandler() {
         var data = event.data;
         var received = JSON.parse(data);
 
-        // creating and formating the offers' divs as they come
-        var offer = document.createElement('div');
-        salary_min = received['salary_min'];
-        if (salary_min == null) {
-            salary_min = '0'
-        }
-        offer.setAttribute("class", "offers");
-        offer.setAttribute("salary", salary_min);
-        // TODO : prettify the skills section
-        offer.innerHTML = '<h2>' + received['title'] + '</h2><h3>' + received['company'] + '</h3> <p>Salary: ' + salary_min + '<br>' + received['skills'] + '</p>';
+        var offer = formatOffer(received)
+
         resultDiv.appendChild(offer);
         // each time we add an offer, we sort them by salary
         sortResults()
     }
+}
+
+function formatOffer(data) {
+    // creating and formating the offers' divs as they come
+    var offer = document.createElement('div');
+
+    salary_min = data['salary_min'];
+    if (salary_min == null) {
+        salary_min = '0'
+    }
+
+    offer.setAttribute("class", "offers");
+    offer.setAttribute("salary", salary_min);
+
+    var match_div = formatSkillsMatch(data['match'])
+
+    // TODO : prettify this skills section
+    var text = document.createElement('div');
+    text.setAttribute('class', 'text')
+    text.innerHTML = '<h2>' + data['title'] + '</h2><h3>' + data['company'] + '</h3> <p>Salary: ' + salary_min + '<br>' + data['skills'] + '</p>';
+
+    offer.appendChild(match_div)
+    offer.appendChild(text)
+
+    return offer
+}
+
+function formatSkillsMatch(p) {
+    var match = document.createElement('div');
+
+    /* Building class */
+    var class_ = "progress-circle"
+    if (p > 50) {
+        class_ += ".over50"
+    }
+    class_ += ' p' + p
+
+    match.setAttribute("class", class_);
+    match.innerHTML = '<span>' + p + '%</span>'
+
+    var clipper = document.createElement('div');
+    clipper.setAttribute("class", "left-half-clipper");
+
+    var type_ = document.createElement('div');
+    type_.setAttribute("class", "first50-bar");
+    clipper.appendChild(type_);
+
+    var value_bar = document.createElement('div');
+    value_bar.setAttribute("class", 'value-bar');
+    clipper.appendChild(value_bar);
+
+    match.appendChild(clipper);
+    
+    return match
 }
 
 function sortResults() {

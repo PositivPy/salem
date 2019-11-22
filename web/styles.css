@@ -43,15 +43,15 @@
   }
   
   #results {
+      width: 80%;
       margin-top: 15px;
+      margin-left: 20px;
   }
-  
-  .offers {
-      margin-left: 150px;
-      max-width: 70%;
-      padding: 5px;
+
+  .text {
+      display: table-row;
   }
-  
+
   h2 {
       font-size: 20px;
       color: blue;
@@ -68,15 +68,29 @@
   
   p {
       font-size: 15px;
-      white-space: pre-wrap;
       line-height: 1.2;
+        /* These are technically the same, but use both */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+
+    -ms-word-break: break-all;
+    /* This is the dangerous one in WebKit, as it breaks things wherever */
+    word-break: break-all;
+    /* Instead use this non-standard one: */
+    word-break: break-word;
+
+    /* Adds a hyphen where the word breaks, if supported (No Blink) */
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
   }
 
   #loader {
     margin-top: 15px;
     display: none;
-    border: 8px solid black; /* Light grey */
-    border-top: 8px solid #01ed02;
+    border: 5px solid black;
+    border-top: 5px solid #01ed02;
     border-radius: 50%;
     width: 20px;
     height: 20px;

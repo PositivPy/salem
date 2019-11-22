@@ -47,6 +47,12 @@ async def fetch(url, session):
 
     except aiohttp.client_exceptions.ClientConnectorError or aiohttp.client_exceptions.ServerDisconnectedError:
         log.critical("No internet connection")
+        return
 
+    # TODO : 
+    # SSL errors are specific to python 3.7
+    # Either upgrade to 3.8 or https://github.com/aio-libs/aiohttp/issues/3535
     except aiohttp.client_exceptions.ClientResponseError or SSLError or SSLCertVerificationError:
         log.critical("Server response error")
+        return ConnectionInterrupted
+        

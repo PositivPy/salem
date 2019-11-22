@@ -7,7 +7,7 @@ import aiostream, urllib, http_
 log = logging.getLogger(__file__)
 
 class Offer(collections.namedtuple('JobOffer',  'title company salary location \
-                                    type_ date txt url link skills',
+                                    type_ date txt url link skills matched',
                                     defaults=(0,))):
     def __eq__(self, other):
         """ Job offers are equal if the title and company of the offers are the same """
@@ -42,7 +42,7 @@ class Indeed:
 
     import lxml.html as data_parser
 
-    BASE_URL = "https://www.indeed.co.uk"
+    BASE_URL = "http://www.indeed.co.uk"
 
     def __init__(self, query, location='London', depth=1, fromage=14):
         self.driver = http_
@@ -199,7 +199,7 @@ class Indeed:
             if apply_link == '/promo/resume':
                 apply_link = url
     
-        new_offer = Offer(title, company, salary, location, type_, date, description, url, apply_link)
+        new_offer = Offer(title, company, salary, location, type_, date, description, url, url, 'N/A')
         
         # further parsing and analysing 
         yield new_offer
@@ -212,7 +212,7 @@ class Reed:
 
     API_KEY = "51db9ad0-f9cd-4041-b4e1-7bc88b023491"
     version = 1.0
-    BASE_URL = f'https://www.reed.co.uk/api/{version}'
+    BASE_URL = f'http://www.reed.co.uk/api/{version}'
 
     def __init__(self, query, location='London'):
         self.query = query
@@ -256,7 +256,7 @@ class Reed:
             
         new_offer = Offer(json_['jobTitle'], json_['employerName'], [json_['yearlyMinimumSalary'], json_['yearlyMaximumSalary']], 
                           json_['locationName'], json_['fullTime'], json_['datePosted'], json_['jobDescription'], 
-                          json_['jobUrl'], json_['jobUrl'])
+                          json_['jobUrl'], json_['jobUrl'], 'N/A')
         yield new_offer
 
 

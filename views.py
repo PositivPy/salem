@@ -40,18 +40,21 @@ class WebView:
             data = msg.json()       #  = {'query' : _, 'location': _ }
             log.info("Query received")
             break
+        try:
+            async for offer in self.query_controller(data['query'], data['location']):
+                # could probably send the whole namedTuple as json  
+                res = { "title": offer.title, "company": offer.company,
+                    "salary_min": offer.salary[0], "skills": offer.skills, "match": offer.matched }
 
-        async for offer in self.query_controller(data['query'], data['location']):
-            # could probably send the whole namedTuple as json  
-            res = { "title": offer.title, "company": offer.company,
-                 "salary_min": offer.salary[0], "skills": offer.skills }
-
-            # send_json parses the dic as json before sending
-            await ws.send_json(res)
-
-        # close the websocket once done 
-        await ws.close()
-        log.debug("Websocket closed")
+                # send_json parses the dic as json before sending
+                await ws.send_json(res)
+        except Exception as e:
+            log.debug(e)
+        finally:
+            # close the websocket once done 
+            await ws.close()
+            log.debug("Websocket closed")
+            log.info("Transmition Ended")
 
     async def index(self, request):
         log.info("Index requested")
