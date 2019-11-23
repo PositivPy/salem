@@ -5,8 +5,8 @@ import sys, logging, asyncio
 import controller
    
 def main(argv=sys.argv[1:]):
-    #level = logging.DEBUG
-    level = logging.INFO
+    level = logging.DEBUG
+    #level = logging.INFO
 
     logging.basicConfig(
         level=level,

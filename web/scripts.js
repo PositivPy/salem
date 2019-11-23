@@ -1,6 +1,6 @@
 function socketHandler() {
     toggleLoaderOn()
-    var resultDiv = document.getElementById("results");
+    var resultDiv = document.getElementById("tresults");
     
     // cleaning up the previous results
     while (resultDiv.firstChild) {
@@ -41,7 +41,7 @@ function socketHandler() {
 
 function formatOffer(data) {
     // creating and formating the offers' divs as they come
-    var offer = document.createElement('div');
+    var offer = document.createElement('tr');
 
     salary_min = data['salary_min'];
     if (salary_min == null) {
@@ -65,7 +65,7 @@ function formatOffer(data) {
 }
 
 function formatSkillsMatch(p) {
-    var match = document.createElement('div');
+    var match = document.createElement('tr');
 
     /* Building class */
     var class_ = "progress-circle"

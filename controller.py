@@ -2,7 +2,7 @@
 
 import sys, collections.abc, asyncio, aiostream, logging
 
-import model, views, jobs, nlp
+import model, views, jobs, nlp, testing
 
 log = logging.getLogger(__file__)
 
@@ -25,7 +25,7 @@ class App(aioObject):
     """ Controlling the app's behaviors """
 
     async def __init__(self):
-        self.db = await model.AsyncDB("jobs.db")    # Different databases for job and item
+        self.db = await testing.AsyncDB("query-offer.db")
         self.api = jobs.Interface                   # Dfferent interface too
         self.nlp = nlp
         self.view = views.WebView(self.search)       # passing self.search as a callback to view
@@ -41,8 +41,28 @@ class App(aioObject):
         # parsing the query for filters and add words
         query, filter = self.parse_filters(original_query)
         parsed_queries = self.flatten(self.parse_add_word(query))
+
         log.info(f'Query: {parsed_queries} Filter: {filter}')
-        async for offer in self.scrape(parsed_queries, 5, location):
+
+        to_scrape = []
+        for query in parsed_queries:
+            query_id, last_update = await self.db.insert_query(query)
+            """if last_update < "1 hour":
+                # we retrieve from database first
+                self.db.retrieve_offers(query_id)"""
+            if not last_update:
+                # the query is new
+                to_scrape.append((query_id, query))
+            else:
+                to_scrape.append((query_id, query))
+
+        log.debug(f'Queries to scrape : {to_scrape}')
+
+        db_entries = []
+        async for (id, offer) in self.scrape(to_scrape, 5, location):
+            # put all the offers on database waiting list
+            db_entries.append((id, offer))
+            log.debug(f'Offer from QueryID {id} Scraped')
             if filter:
                 found = 0
                 for w in filter:
@@ -54,24 +74,30 @@ class App(aioObject):
                     yield offer
             else:
                 yield offer
+        # saving all the offers once done
+        # TODO : coros = [self.db.insert_entry(query, offer) ]
+        for query, offer in db_entries: 
+            log.debug(f'Query: {query}, Offer: {offer.title}')
+            await self.db.insert_entry(query, offer)
 
     async def scrape(self, queries, depth=1, location='London'):
         """ Run the scraper for each query in queries
         Inserts the results into database """
-        log.debug("Scraping started")
+        log.info("Scraping started")
+        log.debug(f'Queries : {queries}')
 
         # create worker coroutines for each queries
-        coros = [self.api(query=q, depth=depth, location=location).run() for q in queries]
-        
+        coros = [self.api(id, query=q, depth=depth, location=location).run() for (id, q) in queries]
+
         # merge these async generators into a single stream
-        async for offer in aiostream.stream.merge(*coros):
+        async for res in aiostream.stream.merge(*coros):
+            query_id, offer = res
+            log.debug(f'Got results from scraping query {query_id}, {offer.title}')
             if offer:
                 # analyse the offer
                 analysed = self.nlp.analyse(offer)
-                # insert offers in db
-                await self.db.insert(analysed)
+                yield query_id, analysed
 
-                yield analysed
 
     async def retrieve(self, query, location):
         """ Retrieve results from database """

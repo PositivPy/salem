@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-import asyncio, os
+import asyncio, os, logging
+
+log = logging.getLogger(__file__)
 
 # TODO : add qualification to a separate field
 qualifications = ['intern', 'assistant', 'manager', 'supervisor', 'gcse', 'degree', 'apprentice', 'clerk', 'master', 'jr', 'senior', 'mid', 'junior', 'grad', 'fullstack', 'graduated', 'graduate']
@@ -24,7 +26,8 @@ def analyse(offer):
     """
     ::Yield:: offer
     """
-    txt = offer.txt
+    log.debug(f"Analysing offer {offer.title}")
+    txt = offer.description
     
     skills = extract_skills(txt)
     matched_skills = skills_match(skills)
@@ -55,6 +58,7 @@ def extract_skills(text):
     keywords = simple + composite
         
     return keywords
+
 cv_skills = extract_skills(cv)
 
 def skills_match(offer_skills):

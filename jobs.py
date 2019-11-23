@@ -6,8 +6,8 @@ import aiostream, urllib, http_
 
 log = logging.getLogger(__file__)
 
-class Offer(collections.namedtuple('JobOffer',  'title company salary location \
-                                    type_ date txt url link skills matched',
+class Offer(collections.namedtuple('JobOffer',  'title company location minSalary maxSalary \
+                                    description url skills matched',
                                     defaults=(0,))):
     def __eq__(self, other):
         """ Job offers are equal if the title and company of the offers are the same """
@@ -21,20 +21,21 @@ class Interface:
     """ There is a name for this type of class, need to google it.
     Essentialy is an interface to multiple objects with the same interface
     """
-    def __init__(self, query, location='London', depth=3):
+    def __init__(self, id, query, location='London', depth=3):
         # unpacking args
-        self.query, self.location, self.depth = query, location, depth
+        self.id, self.query, self.location, self.depth = id, query, location, depth
 
         self.indeed = Indeed
         self.reed = Reed
     
     async def run(self):
+        log.debug(f"QueryID {self.id} - Indeed and Reed")
         coros = [ self.indeed(self.query, self.location, self.depth).run(), 
                   self.reed(self.query, self.location).run()
                 ]
 
         async for offer in aiostream.stream.merge(*coros):
-            yield offer
+            yield self.id, offer
 
 
 class Indeed:
@@ -130,6 +131,7 @@ class Indeed:
         Parse offers page, 
         ::yield::: Offer
         """
+        print("Parsing offer")
         # TODO :
         # Better parsing for company name
 
@@ -198,9 +200,9 @@ class Indeed:
             # TODO : work this out
             if apply_link == '/promo/resume':
                 apply_link = url
-    
-        new_offer = Offer(title, company, salary, location, type_, date, description, url, url, 'N/A')
-        
+        print("Yellow")
+        new_offer = Offer(title, company, location, salary, 0, description, url, 0, 0)
+        print(new_offer)
         # further parsing and analysing 
         yield new_offer
 
@@ -254,9 +256,8 @@ class Reed:
     def parse_offer(self, body, url):
         json_ = self.data_parser.loads(body)
             
-        new_offer = Offer(json_['jobTitle'], json_['employerName'], [json_['yearlyMinimumSalary'], json_['yearlyMaximumSalary']], 
-                          json_['locationName'], json_['fullTime'], json_['datePosted'], json_['jobDescription'], 
-                          json_['jobUrl'], json_['jobUrl'], 'N/A')
+        new_offer = Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], [json_['yearlyMinimumSalary'], json_['yearlyMaximumSalary']], 
+                          json_['jobDescription'], json_['jobUrl'], 0, 0)
         yield new_offer
 
 
@@ -278,8 +279,8 @@ if __name__ == "__main__":
     async def test_reed():
         reed = Reed(query)
         async for offer in reed.run():
-            print(offer.title, offer.txt)
+            print(offer.title, offer.company)
 
     loop=asyncio.get_event_loop()
-    loop.run_until_complete(test_reed())
+    loop.run_until_complete(test_indeed())
     loop.close()
