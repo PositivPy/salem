@@ -1,10 +1,12 @@
-import asyncio, logging
+import asyncio, logging, sys
 
 import aiohttp
 from ssl import SSLError, SSLCertVerificationError
 
 log = logging.getLogger(__file__)
 
+# removing traceback for easier debugging
+sys.tracebacklimit=0
 """
 Async HTTP client.
 fetch_all() is an async generator
@@ -45,14 +47,28 @@ async def fetch(url, session):
                 response.raise_for_status()
             return await response.text(), url
 
-    except aiohttp.client_exceptions.ClientConnectorError or aiohttp.client_exceptions.ServerDisconnectedError:
-        log.critical("No internet connection")
-        return
+    except aiohttp.client_exceptions.ClientConnectionError or aiohttp.client_exceptions.ServerDisconnectedError or aiohttp.client_exceptions.ClientOSError:
+        log.warning("No internet connection")
+        #raise ConnectionInterrupted("No internet connection")
 
     # TODO : 
     # SSL errors are specific to python 3.7
     # Either upgrade to 3.8 or https://github.com/aio-libs/aiohttp/issues/3535
     except aiohttp.client_exceptions.ClientResponseError or SSLError or SSLCertVerificationError:
         log.critical("Server response error")
-        return ConnectionInterrupted
+        raise ConnectionInterrupted("SSL or 505")
         
+
+
+if __name__=="__main__":
+    async def test():
+        async with session_() as session:
+            check = await fetch('http://google.com', session)
+            if check:
+                print("Connection OK")
+
+
+            async for body, url in fetch_all(['http://indeed.co.uk', 'http://reed.co.uk'], session):
+                print(f'Fetched {url}')
+
+    asyncio.run(test())

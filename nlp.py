@@ -79,4 +79,3 @@ def skills_match(offer_skills):
     #if p > 30 and p != 'N/A':
     #print(f'Match: {p}% of {on} skills ({mn}/{len(cv_skills)}) : {matched_skills}')
     return p
-        

@@ -30,12 +30,16 @@ class Interface:
     
     async def run(self):
         log.debug(f"QueryID {self.id} - Indeed and Reed")
-        coros = [ self.indeed(self.query, self.location, self.depth).run(), 
-                  self.reed(self.query, self.location).run()
-                ]
+        try:
+            coros = [ self.indeed(self.query, self.location, self.depth).run(), 
+                    self.reed(self.query, self.location).run()
+                    ]
 
-        async for offer in aiostream.stream.merge(*coros):
-            yield self.id, offer
+            async for offer in aiostream.stream.merge(*coros):
+                yield self.id, offer
+
+        except http_.ConnectionInterrupted:
+                pass
 
 
 class Indeed:
@@ -78,7 +82,6 @@ class Indeed:
         ::async yield:: JobOffer
         """
         log.debug(f'Working on: {listing_url}')
-
         async with self.driver.session_() as session:
             # note that the parent url is still unused 
             listing_body, listing_url = await self.driver.fetch(listing_url, session)
@@ -89,6 +92,7 @@ class Indeed:
                 for offer in self.parse_offer(offer_url, offer_body):
                     if offer:
                         yield offer
+            
 
     def generate_listing_url(self):
         """
@@ -126,12 +130,12 @@ class Indeed:
                 offer_url = self.BASE_URL + offer_href
                 yield offer_url
 
-    def parse_offer(self, body, url):
+    def parse_offer(self, url, body):
         """
         Parse offers page, 
         ::yield::: Offer
         """
-        print("Parsing offer")
+
         # TODO :
         # Better parsing for company name
 
@@ -141,6 +145,8 @@ class Indeed:
         # extracting offer description
         description = root.xpath('//div[@id="jobDescriptionText"]')
         description = ' '.join(node.text_content() for node in description) or None
+        # sanitizing for sql
+        description = description.replace("'","\\'");
 
         # extracting the job title
         title = root.xpath('//h3')
@@ -156,22 +162,25 @@ class Indeed:
         salary = ' '.join(node.text_content() for node in salary) or None
         if salary is None:
             # TODO: try to extract the salary from the description
-            return ['0']
+            salary = ['0', '0']
         # delete '-', '£' and ','
-        salary = salary.replace('-', '').replace('£', '').replace(',', '')
-        # google : (253 working days or 2080 hours per year)
-        for word, multiplier in {'year': 1, 'month': 12, 'week': 52, 'day': 253, 'hour': 2080}.items():
-            if word in salary:
-                # getting rid of the text 
-                salary = salary.replace(word, '').replace('a', '').replace('n', '')
-                for value in salary.split():
-                    # calculating yearly wage 
-                    new_value = str(int(float(value) * multiplier))
-                    salary = salary.replace(value, new_value)
-        try:
+        else:
+            salary = salary.replace('-', '').replace('£', '').replace(',', '')
+            # google : (253 working days or 2080 hours per year)
+            for word, multiplier in {'year': 1, 'month': 12, 'week': 52, 'day': 253, 'hour': 2080}.items():
+                if word in salary:
+                    # getting rid of the text 
+                    salary = salary.replace(word, '').replace('a', '').replace('n', '')
+                    for value in salary.split():
+                        # calculating yearly wage 
+                        new_value = str(int(float(value) * multiplier))
+                        salary = salary.replace(value, new_value)
+
             salary = salary.split()
-        except:
-            pass
+            try:
+                s = salary[1]
+            except IndexError:
+                salary.append(salary[0])
 
         # extracting location
         location = root.xpath('//div[contains(@class, "icl-IconFunctional--location")]/parent::*')
@@ -200,10 +209,9 @@ class Indeed:
             # TODO : work this out
             if apply_link == '/promo/resume':
                 apply_link = url
-        print("Yellow")
-        new_offer = Offer(title, company, location, salary, 0, description, url, 0, 0)
-        print(new_offer)
-        # further parsing and analysing 
+
+        new_offer = Offer(title, company, location, salary[0], salary[1], description, url, 0, 0)
+
         yield new_offer
 
 
@@ -255,9 +263,23 @@ class Reed:
 
     def parse_offer(self, body, url):
         json_ = self.data_parser.loads(body)
-            
-        new_offer = Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], [json_['yearlyMinimumSalary'], json_['yearlyMaximumSalary']], 
-                          json_['jobDescription'], json_['jobUrl'], 0, 0)
+
+        # sanitizing the description for sql
+        description = json_['jobDescription']
+        description = description.replace("'","\\'");
+        
+        try:
+            minSalary = str(int(json_['yearlyMinimumSalary']))
+        except:
+            minSalary = '0'
+        try:
+            maxSalary = str(int(json_['yearlyMaximumSalary']))
+        except:
+            maxSalary = '0'
+
+        new_offer = Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], 
+                            minSalary, maxSalary, description, 
+                            json_['jobUrl'], 0, 0)
         yield new_offer
 
 
@@ -274,7 +296,7 @@ if __name__ == "__main__":
     async def test_indeed():
         indeed = Indeed(query)
         async for offer in indeed.run():
-            print(offer.title, offer.company, offer.salary)
+            print(offer.title, offer.company)
 
     async def test_reed():
         reed = Reed(query)

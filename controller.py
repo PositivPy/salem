@@ -2,7 +2,7 @@
 
 import sys, collections.abc, asyncio, aiostream, logging
 
-import model, views, jobs, nlp, testing
+import model, views, jobs, nlp
 
 log = logging.getLogger(__file__)
 
@@ -25,7 +25,7 @@ class App(aioObject):
     """ Controlling the app's behaviors """
 
     async def __init__(self):
-        self.db = await testing.AsyncDB("query-offer.db")
+        self.db = await model.AsyncDB("query-offer.db")
         self.api = jobs.Interface                   # Dfferent interface too
         self.nlp = nlp
         self.view = views.WebView(self.search)       # passing self.search as a callback to view
@@ -59,7 +59,7 @@ class App(aioObject):
         log.debug(f'Queries to scrape : {to_scrape}')
 
         db_entries = []
-        async for (id, offer) in self.scrape(to_scrape, 5, location):
+        async for (id, offer) in self.scrape(to_scrape, 1, location):
             # put all the offers on database waiting list
             db_entries.append((id, offer))
             log.debug(f'Offer from QueryID {id} Scraped')

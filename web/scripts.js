@@ -43,20 +43,30 @@ function formatOffer(data) {
     // creating and formating the offers' divs as they come
     var offer = document.createElement('tr');
 
-    salary_min = data['salary_min'];
-    if (salary_min == null) {
-        salary_min = '0'
-    }
-
     offer.setAttribute("class", "offers");
-    offer.setAttribute("salary", salary_min);
+    offer.setAttribute("salary", data['salary_min']);
 
     var match_div = formatSkillsMatch(data['match'])
 
     // TODO : prettify this skills section
     var text = document.createElement('div');
     text.setAttribute('class', 'text')
-    text.innerHTML = '<h2>' + data['title'] + '</h2><h3>' + data['company'] + '</h3> <p>Salary: ' + salary_min + '<br>' + data['skills'] + '</p>';
+    
+    // Building the skill string from array
+    var skillString = ''
+    for (i = 0; i < data['skills'].length; i++) {
+        skillString += ' ' + data['skills'][i] + ','
+    }
+    skillString = skillString.charAt(0).toUpperCase() + skillString.slice(1); 
+    
+    // salary can be null sometimes if it isn't present 
+    // in Indeed TODO: always send non-null values
+    var minSalary = data['salary_min'];
+    if (minSalary === "null") {
+        minSalary = 0;
+    }
+
+    text.innerHTML = '<h2>' + data['title'] + '</h2><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + skillString + '</p>';
 
     offer.appendChild(match_div)
     offer.appendChild(text)
@@ -70,7 +80,7 @@ function formatSkillsMatch(p) {
     /* Building class */
     var class_ = "progress-circle"
     if (p > 50) {
-        class_ += ".over50"
+        class_ += " over50"
     }
     class_ += ' p' + p
 
@@ -95,9 +105,8 @@ function formatSkillsMatch(p) {
 
 function sortResults() {
     // https://stackoverflow.com/questions/5066925/javascript-only-sort-a-bunch-of-divs
-    var toSort = document.getElementById('results').children;
+    var toSort = document.getElementById('tresults').children;
     toSort = Array.prototype.slice.call(toSort, 0);
-
     toSort.sort(function(a, b) {
         // a and b are offer divs
         var aord = +a.getAttribute("salary");
@@ -106,7 +115,7 @@ function sortResults() {
         return (aord <= bord) ? 1 : -1;
     });
 
-    var parent = document.getElementById('results');
+    var parent = document.getElementById('tresults');
     parent.innerHTML = "";
 
     for(var i = 0, l = toSort.length; i < l; i++) {

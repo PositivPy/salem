@@ -5,12 +5,13 @@
   }
   
   #header {
-      width: 50%;
+      width: 70%;
   }
   
   .img {
       padding-bottom: 10px;
-      width: 50%;
+      max-width: 40%;
+      min-width: 250px;
   }
 
   .form {
@@ -38,14 +39,15 @@
   }
   
   #button {
-      width: 2.7%;
+      max-height: 1.2em;
       vertical-align: middle;
   }
   
-  #results {
+  #tresults {
       width: 80%;
-      margin-top: 15px;
-      margin-left: 20px;
+      margin-top: 20px;
+      margin-left: auto;
+      margin-right: auto;
   }
 
   .text {
@@ -53,17 +55,23 @@
   }
 
   h2 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 25ch;
       font-size: 20px;
       color: blue;
-      white-space: pre-wrap;
-      line-height: 0.7;
+      line-height: 1;
   }
   
   h3 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 25ch;
       font-size: 15px;
+      padding-top: 0px;
       color: #01ed02;
-      white-space: pre-wrap;
-      line-height: 0;
   }
   
   p {
@@ -87,8 +95,8 @@
   }
 
   #loader {
-    margin-top: 15px;
     display: none;
+    margin-top: 15px;
     border: 5px solid black;
     border-top: 5px solid #01ed02;
     border-radius: 50%;

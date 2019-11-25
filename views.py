@@ -43,6 +43,7 @@ class WebView:
         try:
             async for offer in self.query_controller(data['query'], data['location']):
                 # could probably send the whole namedTuple as json  
+
                 res = { "title": offer.title, "company": offer.company,
                     "salary_min": offer.minSalary, "skills": offer.skills, "match": offer.matched }
 
