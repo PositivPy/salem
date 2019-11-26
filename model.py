@@ -7,11 +7,6 @@ from aiosqlite import IntegrityError
 
 log = logging.getLogger(__file__)
 
-# TODO : move Offer namedtuple
-Offer = collections.namedtuple('JobOffer', 'title company salary location \
-                                         type_ date txt url link skills matched',
-                                         defaults=(0,))
-
 # TODO : move aioObject somewhere else
 class aioObject(object):
     """ Inheriting this class allows you to define an async __init__.
@@ -25,6 +20,7 @@ class aioObject(object):
 
     async def __init__(self):
         pass
+
 
 class AsyncDB(aioObject):
     """ Async aiosqlite database """
@@ -96,7 +92,7 @@ class AsyncDB(aioObject):
                 await self.cursor.execute('''INSERT into QUERY_TO_OFFER VALUES (?, ?) ;''', (offer_id, query_id))
                 await self.con.commit()
         except aiosqlite.IntegrityError:
-            log.error("Error saving query")
+            log.error(f"Error inserting entry {query_id}, {offer_id}")
             pass
 
     @work
@@ -156,7 +152,7 @@ class AsyncDB(aioObject):
 
         except IntegrityError:
             # already exists => fetch the rowid
-            log.debug("Integrity error, query already exsists in database")
+            log.debug("Integrity error, offer already exsists in database")
             await self.cursor.execute(f'''SELECT rowid from OFFERS where 
                                             (title=? AND company=? AND min_£=?) ;''', (offer[0], offer[1], offer[3]))
             row_id = await self.cursor.fetchone()
@@ -187,6 +183,7 @@ class AsyncDB(aioObject):
         await self.cursor.execute('''SELECT * from QUERY_TO_OFFER''')
         res = await self.cursor.fetchall()
         print(res)
+
 
 if __name__=="__main__":
     import sys

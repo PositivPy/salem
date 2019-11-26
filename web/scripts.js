@@ -66,7 +66,7 @@ function formatOffer(data) {
         minSalary = 0;
     }
 
-    text.innerHTML = '<h2>' + data['title'] + '</h2><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + skillString + '</p>';
+    text.innerHTML = "<a href='" + data['url'] + "'>" + '<h2>' + data['title'] + '</h2></a><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + skillString + '</p>';
 
     offer.appendChild(match_div)
     offer.appendChild(text)

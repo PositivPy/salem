@@ -6,6 +6,7 @@ import aiostream, urllib, http_
 
 log = logging.getLogger(__file__)
 
+
 class Offer(collections.namedtuple('JobOffer',  'title company location minSalary maxSalary \
                                     description url skills matched',
                                     defaults=(0,))):
@@ -92,8 +93,7 @@ class Indeed:
                 for offer in self.parse_offer(offer_url, offer_body):
                     if offer:
                         yield offer
-            
-
+        
     def generate_listing_url(self):
         """
         Generating the listing urls by incrementing self.params['start']
