@@ -1,4 +1,5 @@
 passion
+mixologist
 innovation
 competitive
 inspire
@@ -8,7 +9,7 @@ vision
 cocktail
 coffee
 flair
-tea
+team
 vegan
 vegeterian
 medical
@@ -158,7 +159,6 @@ reconciliations
 derivatives
 maintenance
 mailchimp
-science
 middleware
 oracle
 blogging
@@ -207,6 +207,7 @@ hadoop
 dreamweaver
 puppet
 c#
+c++
 ibm
 hp
 mba

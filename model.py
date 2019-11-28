@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import os, collections, asyncio, logging
+import sys, os, collections, asyncio, logging
 
 import aiosqlite
 from aiosqlite import IntegrityError
 
 log = logging.getLogger(__file__)
+
+# disable traceback
+#sys.tracebacklimit=0
 
 # TODO : move aioObject somewhere else
 class aioObject(object):
@@ -82,19 +85,18 @@ class AsyncDB(aioObject):
 
     @work
     async def insert_entry(self, query_id, offer):
-        log.debug(f"Saving Query: {query_id} Offer: {offer.title}")
+        log.info(f"Saving Query: {query_id} Offer: {offer.title}")
         offer_id = await self.insert_offer(offer)
         query_id = await self.update_query(query_id)
 
         try:
             async with aiosqlite.connect(self.name) as self.con:
                 self.cursor = await self.con.cursor()
-                await self.cursor.execute('''INSERT into QUERY_TO_OFFER VALUES (?, ?) ;''', (offer_id, query_id))
+                await self.cursor.execute('''INSERT or IGNORE into QUERY_TO_OFFER VALUES (?, ?) ;''', (offer_id, query_id))
                 await self.con.commit()
-        except aiosqlite.IntegrityError:
-            log.error(f"Error inserting entry {query_id}, {offer_id}")
-            pass
-
+        except Exception as e:
+            log.error("Error inserting")
+    
     @work
     async def update_query(self, id):
         ''' Should be removed, the query should be updated when first access
@@ -150,9 +152,9 @@ class AsyncDB(aioObject):
 
             return self.cursor.lastrowid
 
-        except IntegrityError:
+        except aiosqlite.IntegrityError:
             # already exists => fetch the rowid
-            log.debug("Integrity error, offer already exsists in database")
+            log.warning("Offer already exsists in database")
             await self.cursor.execute(f'''SELECT rowid from OFFERS where 
                                             (title=? AND company=? AND min_£=?) ;''', (offer[0], offer[1], offer[3]))
             row_id = await self.cursor.fetchone()
@@ -160,32 +162,24 @@ class AsyncDB(aioObject):
             return row_id[0]
 
         except AttributeError:
-            print(f"Attribute error with : {offer}")
+            log.error(f"Attribute error with : {offer}")
         
         except Exception as e:
-            log.warning(e)
+            log.error(e)
             log.debug(f'Type error with offer : {offer}')
 
-    @work 
-    async def retrieve_all_queries(self):
-        await self.cursor.execute('''SELECT rowid, * from QUERIES ;''')
-        res = await self.cursor.fetchall()
-        print(res)
-
     @work
-    async def retrieve_all_offers(self):
-        await self.cursor.execute('''SELECT rowid from OFFERS ;''')
-        res = await self.cursor.fetchall()
-        print(res)
-
-    @work
-    async def retrieve_all_relation(self):
-        await self.cursor.execute('''SELECT * from QUERY_TO_OFFER''')
-        res = await self.cursor.fetchall()
-        print(res)
-
+    async def retrieve_offers(self, query_id):
+        await self.cursor.execute(f'''SELECT offer_id from QUERY_TO_OFFER WHERE query_id='{query_id}' ;''')
+        offer_ids = await self.cursor.fetchall()
+        try:
+            await self.cursor.execute("SELECT * from OFFERS WHERE rowid IN {} ;".format(str(tuple([offer_id[0] for offer_id in offer_ids]))))
+            return await self.cursor.fetchall()
+        except:
+            raise TypeError
 
 if __name__=="__main__":
+    # TODO : replace 
     import sys
 
     extension = '.db'

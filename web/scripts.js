@@ -6,6 +6,7 @@ function socketHandler() {
     while (resultDiv.firstChild) {
         resultDiv.removeChild(resultDiv.firstChild);
     }
+
     var Socket = new WebSocket("ws://localhost:8080/search");
     
     Socket.onopen = function() {
@@ -21,7 +22,7 @@ function socketHandler() {
         var responseObject = {"query" : query, "location" : location};
         var responseJson = JSON.stringify(responseObject)
 
-        Socket.send(responseJson);
+        Socket.send(responseJson);{}
 
     }
 
@@ -35,12 +36,13 @@ function socketHandler() {
 
         resultDiv.appendChild(offer);
         // each time we add an offer, we sort them by salary
-        sortResults()
+        sortResultsBy('salary')
     }
 }
 
 function formatOffer(data) {
     // creating and formating the offers' divs as they come
+
     var offer = document.createElement('tr');
 
     offer.setAttribute("class", "offers");
@@ -48,7 +50,7 @@ function formatOffer(data) {
 
     var match_div = formatSkillsMatch(data['match'])
 
-    // TODO : prettify this skills section
+    var t_cell = document.createElement('td')
     var text = document.createElement('div');
     text.setAttribute('class', 'text')
     
@@ -68,14 +70,16 @@ function formatOffer(data) {
 
     text.innerHTML = "<a href='" + data['url'] + "'>" + '<h2>' + data['title'] + '</h2></a><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + skillString + '</p>';
 
+    t_cell.appendChild(text)
+    
     offer.appendChild(match_div)
-    offer.appendChild(text)
+    offer.appendChild(t_cell)
 
     return offer
 }
 
 function formatSkillsMatch(p) {
-    var match = document.createElement('tr');
+    var match = document.createElement('td');
 
     /* Building class */
     var class_ = "progress-circle"
@@ -103,36 +107,47 @@ function formatSkillsMatch(p) {
     return match
 }
 
-function sortResults() {
+function sortResultsBy(attr) {
     // https://stackoverflow.com/questions/5066925/javascript-only-sort-a-bunch-of-divs
-    var toSort = document.getElementById('tresults').children;
+    var table = document.getElementById('tresults')
+    var toSort = table.children;
     toSort = Array.prototype.slice.call(toSort, 0);
+
     toSort.sort(function(a, b) {
         // a and b are offer divs
-        var aord = +a.getAttribute("salary");
-        var bord = +b.getAttribute("salary");
+        var aord = +a.getAttribute(attr);
+        var bord = +b.getAttribute(attr);
 
         return (aord <= bord) ? 1 : -1;
     });
 
-    var parent = document.getElementById('tresults');
-    parent.innerHTML = "";
+    // removing all the disordered tr
+    for (var i = 0, l = toSort.length; i < l; i++) {
+        table.removeChild(toSort[i]);
+    }
 
-    for(var i = 0, l = toSort.length; i < l; i++) {
-        parent.appendChild(toSort[i]);
+    // adding all the tr in sorted order
+    for (var i = 0, l = toSort.length; i < l; i++) {
+        table.appendChild(toSort[i]);
     }
 }
 
 function toggleLoaderOn() {
+    // hidding table headers
+    
+    // showing the loader
     var x = document.getElementById("loader");
     if (x.style.display === "none" || x.style.display === '') {
       x.style.display = "block";
     }
-  }
+}
 
 function toggleLoaderOff() {
+    // hidding loader
     var x = document.getElementById("loader");
     if (x.style.display === "block") {
         x.style.display = "";
       }
+    
+    // showing the table headers
 }

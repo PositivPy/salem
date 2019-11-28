@@ -10,7 +10,7 @@ def main(argv=sys.argv[1:]):
 
     logging.basicConfig(
         level=level,
-        format='%(asctime)s %(filename)s.%(funcName)s() \t\t   %(levelname)-7s %(message)s',
+        format='%(asctime)s %(name)s \t\t   %(levelname)-7s %(message)s',
         datefmt='%m-%d %H:%M:%S')
 
     sql_log = logging.getLogger('aiosqlite').setLevel(logging.INFO)

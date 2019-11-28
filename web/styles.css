@@ -50,6 +50,10 @@
       margin-right: auto;
   }
 
+  th {
+      display: table-header-group;
+  }
+
   .text {
       display: table-row;
   }
@@ -61,10 +65,11 @@
       max-width: 25ch;
       font-size: 20px;
       color: blue;
-      line-height: 1;
   }
   
   h3 {
+      margin-top: -15px;
+      margin-bottom: -10px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;

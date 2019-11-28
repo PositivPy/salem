@@ -58,27 +58,27 @@ class App(aioObject):
 
         log.debug(f'Queries to scrape : {to_scrape}')
 
-        db_entries = []
-        async for (id, offer) in self.scrape(to_scrape, 1, location):
+        async for (id_, offer) in self.scrape(to_scrape, 1, location):
             # put all the offers on database waiting list
-            db_entries.append((id, offer))
-            log.debug(f'Offer from QueryID {id} Scraped')
-            if filter:
-                found = 0
-                for w in filter:
-                    title = offer.title
-                    title = title.lower()
-                    if w in title:
-                        found += 1
-                if not found:
+            log.debug(f'Offer {offer.title} from QueryID {id_} Scraped')
+            if offer:
+                if filter:
+                    found = 0
+                    for w in filter:
+                        title = offer.title
+                        title = title.lower()
+                        if w in title:
+                            found += 1
+                    if not found:
+                        yield offer
+                else:
                     yield offer
-            else:
-                yield offer
-        # saving all the offers once done
-        # TODO : coros = [self.db.insert_entry(query, offer) ]
-        for query, offer in db_entries: 
-            log.debug(f'Query: {query}, Offer: {offer.title}')
-            await self.db.insert_entry(query, offer)
+
+                # saving offer in db 
+                try:
+                    await self.db.insert_entry(id_, offer)
+                except Exception as e:
+                    log.error(e)
 
     async def scrape(self, queries, depth=1, location='London'):
         """ Run the scraper for each query in queries

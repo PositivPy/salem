@@ -1,4 +1,5 @@
 nights
+team lead
 mornings
 analysing
 cleaning
@@ -27,7 +28,7 @@ public speaking
 java server pages
 analytical skill
 product launch
-rest apis
+rest api
 brand and identity design
 full stack development
 english language

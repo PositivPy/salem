@@ -37,7 +37,8 @@ class Interface:
                     ]
 
             async for offer in aiostream.stream.merge(*coros):
-                yield self.id, offer
+                if offer:
+                    yield self.id, offer
 
         except http_.ConnectionInterrupted:
                 pass
@@ -146,8 +147,10 @@ class Indeed:
         description = root.xpath('//div[@id="jobDescriptionText"]')
         description = ' '.join(node.text_content() for node in description) or None
         # sanitizing for sql
-        description = description.replace("'","\\'");
-
+        try:
+            description = description.replace("'","\\'");
+        except:
+            description = "None"
         # extracting the job title
         title = root.xpath('//h3')
         title = ' '.join(node.text_content() for node in title) or None

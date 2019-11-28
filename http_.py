@@ -7,17 +7,12 @@ log = logging.getLogger(__file__)
 
 # removing traceback for easier debugging
 sys.tracebacklimit=0
-"""
-Async HTTP client.
-fetch_all() is an async generator
-"""
 
 class ConnectionInterrupted(Exception):
     pass 
 
 session_ = aiohttp.ClientSession
-
-count = 0
+timeout = aiohttp.ClientTimeout(10)
 
 async def fetch_all(urls, session):
     """
@@ -35,13 +30,8 @@ async def fetch(url, session):
     Fetch single url
     ::async return:: body, url
     """
-    global count
-    count += 1
-    
-    log.debug(f'Fetching {count}')
-
     try:
-        async with session.get(url) as response:
+        async with session.get(url, timeout=timeout) as response:
             # raise exception
             if response.status != 200:
                 response.raise_for_status()
@@ -51,13 +41,14 @@ async def fetch(url, session):
         log.warning("No internet connection")
         #raise ConnectionInterrupted("No internet connection")
 
-    # TODO : 
+    # BUG
     # SSL errors are specific to python 3.7
     # Either upgrade to 3.8 or https://github.com/aio-libs/aiohttp/issues/3535
     except aiohttp.client_exceptions.ClientResponseError or SSLError or SSLCertVerificationError:
         log.critical("Server response error")
-        raise ConnectionInterrupted("SSL or 505")
-        
+    
+    except asyncio.CancelledError or asyncio.TimeoutError:
+        log.warning("Timeout exceded or task cancelled")
 
 
 if __name__=="__main__":
