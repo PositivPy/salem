@@ -19,7 +19,7 @@ def retrieve_file(name):
     return content
 
 comp_skills_db = retrieve_file('comp_skills.txt').splitlines()
-simple_skills_db = retrieve_file('simple_skills.txt').splitlines() + qualifications
+simple_skills_db = retrieve_file('simple_skills.txt').splitlines()  
 cv = retrieve_file('example_cv.txt')
 
 def analyse(offer):
@@ -79,3 +79,20 @@ def skills_match(offer_skills):
     #if p > 30 and p != 'N/A':
     #print(f'Match: {p}% of {on} skills ({mn}/{len(cv_skills)}) : {matched_skills}')
     return p
+
+
+if __name__=="__main__":
+    import sys
+    file = ''
+    try:
+        file = sys.argv[1]
+    except IndexError:
+        print("File path in argument")
+        exit(1)
+
+    f = open(f'{file}')
+    content = f.read()
+    f.close()
+
+    keywords = extract_skills(content)
+    print(keywords)

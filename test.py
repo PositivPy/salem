@@ -1,13 +1,15 @@
 """ This script is meant for analysing the database /data/query-offer.db """
 
 import asyncio
+from collections import Counter, OrderedDict
 
-import model
+import model, nlp
 import aiosqlite
 from aiosqlite import IntegrityError
 import statistics
 import matplotlib.pyplot as plt 
 import numpy as np 
+from wordcloud import WordCloud
 
 
 class ManagedDB(model.AsyncDB):
@@ -57,8 +59,7 @@ def median_mean_salary(offers):
 
     print(f'Median: {median} Average: {avg} Min: {min_} Max: {max_}')
     return avg, median, min_, max_
-    
-    
+       
 def plot(stats):
         # ie. stats = [(query_name, avg, median)*n_queries]
         # separating data into numpy arrays
@@ -97,36 +98,110 @@ def plot(stats):
         
         # function to show the plot 
         plt.show() 
+
+async def plot_salary_stats(db):
+     
     
+    stats = []
+    print(stats)
+    queries = await db.retrieve_all_queries()
+    for qid, qname, _, qcount in queries:
+        print(qid, qname)
+        try:
+            offers = await db.retrieve_offers(qid)
+        except TypeError:
+            "nothing found"
+        try:
+            avg, median, min_, max_ = median_mean_salary(offers)
+            stats.append((qname, avg, median, min_, max_))
+        except statistics.StatisticsError:
+            print("nothing found")
+        
+    # sort stats by max
+    stats.sort(key=lambda item: item[4])
+
+    plot(stats)
+# run test function   
+
+async def skills_extraction(db):
+
+    queries = await db.retrieve_all_queries()
+    ct = Counter() 
+    in_ct = 0
+    for qid, qname, _, qcount in queries:
+        print(qid)
+        if qid != 44:
+            try:
+                offers = await db.retrieve_offers(qid)
+            except :
+                "nothing found" 
+            
+            for offer in offers:
+                in_ct += 1
+
+                skills = offer[7]
+                skills = skills.replace('[', '')
+                skills = skills.replace("'", '')
+                skills = skills.replace(']', '')
+                skills = skills.split(', ')
+                for skill in skills:
+                    ct[skill] += 1
+    # sort counter 
+    ct = OrderedDict(ct.most_common())
+    print(f'Total Offers: {in_ct}')
+    return ct
+
+def plot_bar_chart(counter):
+    # suort and team are riddiculously high (1434, 1577 respectively)
+    # which is double the next word : training at 781
+    # thus are meaningless and deleted 
+    del counter['team']
+    del counter['support']
+
+    # let's delete skills whith a frequency under 2 to make the 
+    # graph clearer
+    counter = {key:val for key, val in counter.items() if val > 2}
+    print(counter)
+    labels, values = zip(*counter.items())
+    indexes = np.arange(len(labels))
+    width = 1
+
+    plt.bar(indexes, values, width)
+    
+    # hidding skills labels
+    frame1 = plt.gca()
+    frame1.axes.xaxis.set_ticklabels([])
+    #plt.xticks(indexes + width * 0.5, labels, rotation=90)
+
+    # adjusting the frame
+    plt.subplots_adjust(left=0.10, bottom=0.08, right=0.97, top=0.94)
+
+    plt.xlabel('Skills') 
+    plt.ylabel('Frequency')
+    # giving a title to my graph 
+    plt.title('Skills Frequency') 
+    
+
+    plt.show()
+
+def plot_word_cloud(counter):
+    wordcloud = WordCloud()
+    wordcloud.generate_from_frequencies(frequencies=counter)
+    
+    plt.figure()
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
+        
 
 if __name__ == "__main__":
     import sys
 
-    name = 'query-offer.db'
-    id_ = '2'
-
-    # define async test function 
-    async def test(name):
+    async def test():
+        name = 'query-offer.db'
         db = await ManagedDB(name)
-
-        stats = []
-        print(stats)
-        queries = await db.retrieve_all_queries()
-        for qid, qname, _, qcount in queries:
-            print(qid, qname)
-            try:
-                offers = await db.retrieve_offers(qid)
-            except TypeError:
-                "nothing found"
-            try:
-                avg, median, min_, max_ = median_mean_salary(offers)
-                stats.append((qname, avg, median, min_, max_))
-            except statistics.StatisticsError:
-                print("nothing found")
-            
-        # sort stats by max
-        stats.sort(key=lambda item: item[4])
-
-        plot(stats)
-    # run test function
-    asyncio.run(test(name))        
+    # define async test function 
+        ct = await skills_extraction(db)
+        plot_bar_chart(ct)
+    #asyncio.run(plot_salary_stats(name))  
+    asyncio.run(test())      

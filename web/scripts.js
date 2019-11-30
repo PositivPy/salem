@@ -148,6 +148,4 @@ function toggleLoaderOff() {
     if (x.style.display === "block") {
         x.style.display = "";
       }
-    
-    // showing the table headers
 }
