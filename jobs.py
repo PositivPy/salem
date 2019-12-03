@@ -2,20 +2,13 @@
 
 import collections, asyncio, time, logging
 
-import aiostream, urllib, http_
+import aiostream, urllib, http_, model
 
 log = logging.getLogger(__file__)
 
 
-class Offer(collections.namedtuple('JobOffer',  'title company location minSalary maxSalary \
-                                    description url skills matched',
-                                    defaults=(0,))):
-    def __eq__(self, other):
-        """ Job offers are equal if the title and company of the offers are the same """
-        if self.title.lower() == other.title.lower() and self.company.lower() == other.company.lower():
-            return True
-        else:
-            return False
+# define the model to be used 
+Offer = model.JobOffer
 
 
 class Interface:
@@ -212,10 +205,9 @@ class Indeed:
             # TODO : work this out
             if apply_link == '/promo/resume':
                 apply_link = url
+        
+        yield Offer(title, company, location, salary[0], salary[1], description, url, 0, 0)
 
-        new_offer = Offer(title, company, location, salary[0], salary[1], description, url, 0, 0)
-
-        yield new_offer
 
 
 class Reed:
@@ -280,10 +272,9 @@ class Reed:
         except:
             maxSalary = '0'
 
-        new_offer = Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], 
+        yield Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], 
                             minSalary, maxSalary, description, 
                             json_['jobUrl'], 0, 0)
-        yield new_offer
 
 
 if __name__ == "__main__":

@@ -2,21 +2,22 @@
 
 import asyncio
 from collections import Counter, OrderedDict
-
-import model, nlp
+import model
+import database, nlp
 import aiosqlite
 from aiosqlite import IntegrityError
 import statistics
 import matplotlib.pyplot as plt 
 import numpy as np 
+import json
 from wordcloud import WordCloud
 
 
-class ManagedDB(model.AsyncDB):
+class ManagedDB(database.AsyncDB):
 
-    async def __init__(self, name):
-        self.name = name
-        await super().__init__(self.name)
+    async def __init__(self, name, data_type):
+        self.name, self.data_type = name, data_type
+        await super().__init__(self.name, self.data_type)
 
     def work(func):
         """ Async decorator: opening the database in a context manager before use """
@@ -29,11 +30,6 @@ class ManagedDB(model.AsyncDB):
                 return await func(*args)
         return _wraper
         
-    @work 
-    async def retrieve_all_queries(self):
-        await self.cursor.execute('''SELECT rowid, * from QUERIES ;''')
-        return await self.cursor.fetchall()
-
     @work
     async def retrieve_all_offers(self):
         await self.cursor.execute('''SELECT rowid from OFFERS ;''')
@@ -121,21 +117,15 @@ async def plot_salary_stats(db):
     stats.sort(key=lambda item: item[4])
 
     plot(stats)
-# run test function   
 
 async def skills_extraction(db):
 
     queries = await db.retrieve_all_queries()
     ct = Counter() 
     in_ct = 0
-    for qid, qname, _, qcount in queries:
-        print(qid)
-        if qid != 44:
-            try:
-                offers = await db.retrieve_offers(qid)
-            except :
-                "nothing found" 
-            
+    for qid, qname, _, __ in queries:
+        try:
+            offers = await db.retrieve_offers_from(qid)
             for offer in offers:
                 in_ct += 1
 
@@ -146,21 +136,18 @@ async def skills_extraction(db):
                 skills = skills.split(', ')
                 for skill in skills:
                     ct[skill] += 1
+        except :
+            "Nothing found" 
+        
+
     # sort counter 
     ct = OrderedDict(ct.most_common())
     print(f'Total Offers: {in_ct}')
     return ct
 
 def plot_bar_chart(counter):
-    # suort and team are riddiculously high (1434, 1577 respectively)
-    # which is double the next word : training at 781
-    # thus are meaningless and deleted 
-    del counter['team']
-    del counter['support']
-
-    # let's delete skills whith a frequency under 2 to make the 
-    # graph clearer
-    counter = {key:val for key, val in counter.items() if val > 2}
+    if not counter:
+        return
     print(counter)
     labels, values = zip(*counter.items())
     indexes = np.arange(len(labels))
@@ -198,8 +185,9 @@ if __name__ == "__main__":
     import sys
 
     async def test():
+        data_type = model
         name = 'query-offer.db'
-        db = await ManagedDB(name)
+        db = await ManagedDB(name, data_type)
     # define async test function 
         ct = await skills_extraction(db)
         plot_bar_chart(ct)

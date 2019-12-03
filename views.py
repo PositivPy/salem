@@ -7,7 +7,7 @@ import aiohttp.web
 log = logging.getLogger(__file__)
 
 class WebView:
-    """ aiohttp server for website and websocket api """
+    """ aiohttp server for website and api """
     
     def __init__(self, controller_interface):
         self.query_controller = controller_interface
@@ -42,14 +42,9 @@ class WebView:
             break
         try:
             async for offer in self.query_controller(data['query'], data['location']):
-                # could probably send the whole namedTuple as json  
-
-                res = { "title": offer.title, "company": offer.company,
-                    "salary_min": offer.minSalary, "skills": offer.skills, 
-                    "match": offer.matched, "url" : offer.url }
-
-                # send_json parses the dic as json before sending
-                await ws.send_json(res)
+                # ws.send_json uses json.dumps()
+                # TODO: something is going wrong here
+                await ws.send_json(offer._asdict())
         except Exception as e:
             log.debug(e)
         finally:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import sys, collections.abc, asyncio, aiostream, logging
+import sys, collections.abc, asyncio, aiostream, logging, datetime
 
-import model, views, jobs, nlp
+import database, views, jobs, nlp, model
 
 log = logging.getLogger(__file__)
 
@@ -25,7 +25,7 @@ class App(aioObject):
     """ Controlling the app's behaviors """
 
     async def __init__(self):
-        self.db = await model.AsyncDB("query-offer.db")
+        self.db = await database.AsyncDB("query-offer.db", model)
         self.api = jobs.Interface                   # Dfferent interface too
         self.nlp = nlp
         self.view = views.WebView(self.search)       # passing self.search as a callback to view
@@ -47,14 +47,26 @@ class App(aioObject):
         to_scrape = []
         for query in parsed_queries:
             query_id, last_update = await self.db.insert_query(query)
-            """if last_update < "1 hour":
-                # we retrieve from database first
-                self.db.retrieve_offers(query_id)"""
+
             if not last_update:
                 # the query is new
                 to_scrape.append((query_id, query))
             else:
-                to_scrape.append((query_id, query))
+                # check if query should be scraped again 
+                last_update = datetime.datetime.strptime(last_update, '%Y-%m-%d %H:%M:%S')
+                now = datetime.datetime.now()
+                diff = now - last_update
+
+                # if last update > 1h
+                if diff > datetime.timedelta(1):
+                    # scrape again
+                    # TODO: the seen urls of the scrapers should be filled now 
+                    to_scrape.append((query_id, query))
+                else:
+
+                    all_offers = await self.db.retrieve_offers_from(query_id)
+                    for offer in all_offers:
+                        yield offer
 
         log.debug(f'Queries to scrape : {to_scrape}')
 
