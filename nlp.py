@@ -56,7 +56,10 @@ def extract_skills(text):
             simple.remove(word)
 
     keywords = simple + composite
-        
+    
+    # as a sentence
+    keywords = ', '.join(keywords)
+
     return keywords
 
 cv_skills = extract_skills(cv)

@@ -46,7 +46,7 @@ function formatOffer(data) {
     var offer = document.createElement('tr');
 
     offer.setAttribute("class", "offers");
-    offer.setAttribute("salary", data['salary_min']);
+    offer.setAttribute("salary", data['minSalary']);
 
     var match_div = formatSkillsMatch(data['match'])
 
@@ -54,21 +54,14 @@ function formatOffer(data) {
     var text = document.createElement('div');
     text.setAttribute('class', 'text')
     
-    // Building the skill string from array
-    var skillString = ''
-    for (i = 0; i < data['skills'].length; i++) {
-        skillString += ' ' + data['skills'][i] + ','
-    }
-    skillString = skillString.charAt(0).toUpperCase() + skillString.slice(1); 
-    
     // salary can be null sometimes if it isn't present 
     // in Indeed TODO: always send non-null values
-    var minSalary = data['salary_min'];
+    var minSalary = data['minSalary'];
     if (minSalary === "null") {
         minSalary = 0;
     }
 
-    text.innerHTML = "<a href='" + data['url'] + "'>" + '<h2>' + data['title'] + '</h2></a><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + skillString + '</p>';
+    text.innerHTML = "<a href='" + data['url'] + "'>" + '<h2>' + data['title'] + '</h2></a><h3>' + data['company'] + '</h3> <p>Salary: ' + minSalary + '<br>' + data['skills'] + '</p>';
 
     t_cell.appendChild(text)
     

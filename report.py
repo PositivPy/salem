@@ -156,9 +156,9 @@ def plot_bar_chart(counter):
     plt.bar(indexes, values, width)
     
     # hidding skills labels
-    frame1 = plt.gca()
-    frame1.axes.xaxis.set_ticklabels([])
-    #plt.xticks(indexes + width * 0.5, labels, rotation=90)
+    #frame1 = plt.gca()
+    #frame1.axes.xaxis.set_ticklabels([])
+    plt.xticks(indexes + width * 0.5, labels, rotation=90)
 
     # adjusting the frame
     plt.subplots_adjust(left=0.10, bottom=0.08, right=0.97, top=0.94)
@@ -191,5 +191,5 @@ if __name__ == "__main__":
     # define async test function 
         ct = await skills_extraction(db)
         plot_bar_chart(ct)
-    #asyncio.run(plot_salary_stats(name))  
+        #asyncio.run(plot_salary_stats(name))  
     asyncio.run(test())      

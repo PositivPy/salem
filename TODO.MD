@@ -7,15 +7,17 @@
 
 
 # urgent #
+-> organisation
 -> web
 
 # web #
--> something going wrong with offer._asdict() not being parsed properly by json.dumps()
+-> something going wrong with offer._asdict() not being parsed properly by json.dumps() due to the skills list
 -> sort by match
 -> find a solution for <th>
 -> move salary under match
--> handle errors in the webview (connection drops)
--> stats :
+-> handle errors in the webview (Eror 404)
+-> move match calculation to the web client
+-> enable receiving stats by checking type in message:
       - results nb
       - time
       - mean/median salary for the query
@@ -25,13 +27,13 @@
 -> database reporting tools (testing)
 -> fix insert offer for the new model 
 
-# nlp #
+# nlp # --> move to analyse.py and merge with test.py
 -> parse qualifications from description
 -> parse education
 -> parse benefits from description
 -> parse salary from description
 
-# organisation #
+# organisation # 
 -> testing suite
 -> virtual environement
 -> README.MD
@@ -39,7 +41,6 @@
 
 # To think about #
 -> remove doubles
--> move match calculation to the  web client
 -> Indeed still not answering
 -> auto apply
 -> cli view (long live the cli)

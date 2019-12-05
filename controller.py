@@ -34,72 +34,52 @@ class App(aioObject):
         self.view.start()
 
     async def search(self, query, location):
-        """ Display search results """
-        original_query = query
-
         # TODO : in a separate ArgumentParser
         # parsing the query for filters and add words
-        query, filter = self.parse_filters(original_query)
+        original_query = query 
+        query, filters = self.parse_filters(original_query)
         parsed_queries = self.flatten(self.parse_add_word(query))
 
         log.info(f'Query: {parsed_queries} Filter: {filter}')
 
         to_scrape = []
+        seen_urls = list()
         for query in parsed_queries:
             query_id, last_update = await self.db.insert_query(query)
-
-            if not last_update:
-                # the query is new
-                to_scrape.append((query_id, query))
-            else:
-                # check if query should be scraped again 
-                last_update = datetime.datetime.strptime(last_update, '%Y-%m-%d %H:%M:%S')
-                now = datetime.datetime.now()
-                diff = now - last_update
-
-                # if last update > 1h
-                if diff > datetime.timedelta(1):
-                    # scrape again
-                    # TODO: the seen urls of the scrapers should be filled now 
-                    to_scrape.append((query_id, query))
-                else:
-
-                    all_offers = await self.db.retrieve_offers_from(query_id)
+            log.debug(f'Query ID: {query_id}')
+            to_scrape.append((query_id, query))
+            if last_update:
+                # the query is exists
+                # retrieve the offers from db
+                all_offers = await self.db.retrieve_offers_from(query_id)
+                if all_offers:
                     for offer in all_offers:
-                        yield offer
-
-        log.debug(f'Queries to scrape : {to_scrape}')
-
-        async for (id_, offer) in self.scrape(to_scrape, 1, location):
-            # put all the offers on database waiting list
+                        # fill the seen_url lists
+                        seen_urls.append(offer.url)
+                        offer = self.filter(offer, filters)
+                        if offer:
+                            yield offer
+        
+        async for (id_, offer) in self.scrape(to_scrape, location, seen_urls):
             log.debug(f'Offer {offer.title} from QueryID {id_} Scraped')
+            offer = self.filter(offer, filters)
             if offer:
-                if filter:
-                    found = 0
-                    for w in filter:
-                        title = offer.title
-                        title = title.lower()
-                        if w in title:
-                            found += 1
-                    if not found:
-                        yield offer
-                else:
-                    yield offer
-
+                yield offer
                 # saving offer in db 
                 try:
                     await self.db.insert_entry(id_, offer)
                 except Exception as e:
                     log.error(e)
 
-    async def scrape(self, queries, depth=1, location='London'):
+
+    async def scrape(self, queries, location='London', seen_urls=[]):
         """ Run the scraper for each query in queries
         Inserts the results into database """
         log.info("Scraping started")
         log.debug(f'Queries : {queries}')
 
-        # create worker coroutines for each queries
-        coros = [self.api(id, query=q, depth=depth, location=location).run() for (id, q) in queries]
+        # create coroutines for each queries
+        coros = [self.api(id, query=q, location=location).run() for (id, q) in queries]
 
         # merge these async generators into a single stream
         async for res in aiostream.stream.merge(*coros):
@@ -110,12 +90,6 @@ class App(aioObject):
                 analysed = self.nlp.analyse(offer)
                 yield query_id, analysed
 
-
-    async def retrieve(self, query, location):
-        """ Retrieve results from database """
-        raise NotImplementedError
-
-##### TODO : move all of this to an argument parser ####
     def flatten(self, x):
         """ Flatten a list of nested list of unknown depth to a simple list """
         if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
@@ -175,6 +149,19 @@ class App(aioObject):
         queries = ' '.join(query)
         return queries
 
+    def filter(self, offer, filters):
+        if offer:
+            if filters:
+                found = 0
+                for w in filters:
+                    title = offer.title
+                    title = title.lower()
+                    if w in title:
+                        found += 1
+                if not found:
+                    return offer
+            else:
+                return offer
 
 if __name__ == '__main__':
     app = asyncio.run(App())

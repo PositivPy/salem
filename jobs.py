@@ -15,17 +15,20 @@ class Interface:
     """ There is a name for this type of class, need to google it.
     Essentialy is an interface to multiple objects with the same interface
     """
-    def __init__(self, id, query, location='London', depth=3):
+    def __init__(self, id, query, location='London', seen_urls=[]):
         # unpacking args
-        self.id, self.query, self.location, self.depth = id, query, location, depth
+        self.id, self.query, self.location, = id, query, location
 
         self.indeed = Indeed
         self.reed = Reed
+
+        self.indeed.seen_url = seen_urls
+        self.reed.seen_url = seen_urls
     
     async def run(self):
         log.debug(f"QueryID {self.id} - Indeed and Reed")
         try:
-            coros = [ self.indeed(self.query, self.location, self.depth).run(), 
+            coros = [ self.indeed(self.query, self.location, depth=4).run(), 
                     self.reed(self.query, self.location).run()
                     ]
 
@@ -207,7 +210,6 @@ class Indeed:
                 apply_link = url
         
         yield Offer(title, company, location, salary[0], salary[1], description, url, 0, 0)
-
 
 
 class Reed:

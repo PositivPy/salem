@@ -43,7 +43,6 @@ class WebView:
         try:
             async for offer in self.query_controller(data['query'], data['location']):
                 # ws.send_json uses json.dumps()
-                # TODO: something is going wrong here
                 await ws.send_json(offer._asdict())
         except Exception as e:
             log.debug(e)
