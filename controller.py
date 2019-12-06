@@ -40,7 +40,7 @@ class App(aioObject):
         query, filters = self.parse_filters(original_query)
         parsed_queries = self.flatten(self.parse_add_word(query))
 
-        log.info(f'Query: {parsed_queries} Filter: {filter}')
+        log.info(f'Query: {parsed_queries} Filter: {filters}')
 
         to_scrape = []
         seen_urls = list()
@@ -79,7 +79,7 @@ class App(aioObject):
         log.debug(f'Queries : {queries}')
 
         # create coroutines for each queries
-        coros = [self.api(id, query=q, location=location).run() for (id, q) in queries]
+        coros = [self.api(id, query=q, location=location, seen=seen_urls).run() for (id, q) in queries]
 
         # merge these async generators into a single stream
         async for res in aiostream.stream.merge(*coros):
@@ -162,6 +162,7 @@ class App(aioObject):
                     return offer
             else:
                 return offer
+
 
 if __name__ == '__main__':
     app = asyncio.run(App())

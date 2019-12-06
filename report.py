@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """ This script is meant for analysing the database /data/query-offer.db """
 
 import asyncio

@@ -15,21 +15,18 @@ class Interface:
     """ There is a name for this type of class, need to google it.
     Essentialy is an interface to multiple objects with the same interface
     """
-    def __init__(self, id, query, location='London', seen_urls=[]):
+    def __init__(self, id, query, location='London', seen=[]):
         # unpacking args
-        self.id, self.query, self.location, = id, query, location
+        self.id, self.query, self.location, self.seen_urls = id, query, location, seen
 
         self.indeed = Indeed
         self.reed = Reed
 
-        self.indeed.seen_url = seen_urls
-        self.reed.seen_url = seen_urls
-    
     async def run(self):
         log.debug(f"QueryID {self.id} - Indeed and Reed")
         try:
-            coros = [ self.indeed(self.query, self.location, depth=4).run(), 
-                    self.reed(self.query, self.location).run()
+            coros = [ self.indeed(self.query, self.location, depth=4, seen=self.seen_urls).run(), 
+                    self.reed(self.query, self.location, seen=self.seen_urls).run()
                     ]
 
             async for offer in aiostream.stream.merge(*coros):
@@ -47,10 +44,10 @@ class Indeed:
 
     BASE_URL = "http://www.indeed.co.uk"
 
-    def __init__(self, query, location='London', depth=1, fromage=14):
+    def __init__(self, query, location='London', depth=1, seen=[], fromage=14):
         self.driver = http_
 
-        self.seen_url = []
+        self.seen_url = seen
         self.depth = depth      
         self.query = query  
 
@@ -221,9 +218,9 @@ class Reed:
     version = 1.0
     BASE_URL = f'http://www.reed.co.uk/api/{version}'
 
-    def __init__(self, query, location='London'):
+    def __init__(self, query, location='London', seen=[]):
         self.query = query
-
+        self.seen_urls = seen
         self.driver = http_
 
         self.params = {
@@ -256,7 +253,8 @@ class Reed:
 
         for offer in results:
             offer_url = self.BASE_URL + '/jobs/' + str(offer['jobId'])
-            yield offer_url
+            if offer_url not in self.seen_urls:
+                yield offer_url
 
     def parse_offer(self, body, url):
         json_ = self.data_parser.loads(body)
@@ -277,28 +275,3 @@ class Reed:
         yield Offer(json_['jobTitle'], json_['employerName'], json_['locationName'], 
                             minSalary, maxSalary, description, 
                             json_['jobUrl'], 0, 0)
-
-
-if __name__ == "__main__":
-    import sys 
-
-    try:
-        query = sys.argv[1]
-    except IndexError:
-        print("Please provide query string in argument")
-        exit(1)
-
-    # TODO: move all of these to a /test
-    async def test_indeed():
-        indeed = Indeed(query)
-        async for offer in indeed.run():
-            print(offer.title, offer.company)
-
-    async def test_reed():
-        reed = Reed(query)
-        async for offer in reed.run():
-            print(offer.title, offer.company)
-
-    loop=asyncio.get_event_loop()
-    loop.run_until_complete(test_indeed())
-    loop.close()
