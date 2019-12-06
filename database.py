@@ -160,6 +160,7 @@ class AsyncDB(aioObject):
             log.error(e)
             
     async def retrieve_offers_from(self, query_id):
+
         # defining the return datatype
         def _namedtuple_factory(cursor, row):
             return self.model(*row)

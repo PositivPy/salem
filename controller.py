@@ -26,9 +26,10 @@ class App(aioObject):
 
     async def __init__(self):
         self.db = await database.AsyncDB("query-offer.db", model)
-        self.api = jobs.Interface                   # Dfferent interface too
+        self.api = jobs.Interface
         self.nlp = nlp
-        self.view = views.WebView(self.search)       # passing self.search as a callback to view
+        # passing self.search as a callback to view
+        self.view = views.WebView(self.search)
 
     def run(self):
         self.view.start()
@@ -46,12 +47,18 @@ class App(aioObject):
         seen_urls = list()
         for query in parsed_queries:
             query_id, last_update = await self.db.insert_query(query)
+
             log.debug(f'Query ID: {query_id}')
+
             to_scrape.append((query_id, query))
             if last_update:
                 # the query is exists
                 # retrieve the offers from db
                 all_offers = await self.db.retrieve_offers_from(query_id)
+
+                length = all_offers.length()
+                log.info(f'Offers in database: {length}')
+
                 if all_offers:
                     for offer in all_offers:
                         # fill the seen_url lists
@@ -61,7 +68,9 @@ class App(aioObject):
                             yield offer
         
         async for (id_, offer) in self.scrape(to_scrape, location, seen_urls):
+
             log.debug(f'Offer {offer.title} from QueryID {id_} Scraped')
+
             offer = self.filter(offer, filters)
             if offer:
                 yield offer
@@ -84,18 +93,13 @@ class App(aioObject):
         # merge these async generators into a single stream
         async for res in aiostream.stream.merge(*coros):
             query_id, offer = res
+
             log.debug(f'Got results from scraping query {query_id}, {offer.title}')
+
             if offer:
                 # analyse the offer
                 analysed = self.nlp.analyse(offer)
                 yield query_id, analysed
-
-    def flatten(self, x):
-        """ Flatten a list of nested list of unknown depth to a simple list """
-        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
-            return [a for i in x for a in self.flatten(i)]
-        else:
-            return [x]
 
     def parse_filters(self,query):
         """ Parsing query for -words """
@@ -150,6 +154,7 @@ class App(aioObject):
         return queries
 
     def filter(self, offer, filters):
+        """ Filtering offers """
         if offer:
             if filters:
                 found = 0
@@ -162,6 +167,13 @@ class App(aioObject):
                     return offer
             else:
                 return offer
+
+    def flatten(self, x):
+        """ Flatten a list of nested list of unknown depth to a simple list """
+        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
+            return [a for i in x for a in self.flatten(i)]
+        else:
+            return [x]
 
 
 if __name__ == '__main__':

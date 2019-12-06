@@ -6,9 +6,9 @@ import aiohttp
 from ssl import SSLError, SSLCertVerificationError
 
 log = logging.getLogger(__file__)
-
 # removing traceback for easier logging
 sys.tracebacklimit=0
+
 
 class ConnectionInterrupted(Exception):
     pass 
@@ -22,14 +22,10 @@ async def fetch_all(urls, session):
     urls is an iterable (list or generator)
     ::async yield:: body, url
     """ 
-    try:
-        workers = [fetch(url, session) for url in urls]
-        for first_completed in asyncio.as_completed(workers):
-            # yield items as soon as they are ready
-            yield await first_completed
-    except TypeError:
-        # BUG I don't know, TypeError: cannot unpack non-iterable NoneType object
-        print(urls)
+    workers = [fetch(url, session) for url in urls]
+    for first_completed in asyncio.as_completed(workers):
+        # yield items as soon as they are ready
+        yield await first_completed
 
 async def fetch(url, session):
     """
@@ -57,7 +53,3 @@ async def fetch(url, session):
     except aiohttp.client_exceptions.ClientResponseError or SSLError or SSLCertVerificationError:
         log.critical("SSL response error")
         await session.close()
-
-    # BUG don't know yet, TypeError: cannot unpack non-iterable NoneType object  
-    except Exception as e:
-        print(e)

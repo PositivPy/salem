@@ -6,6 +6,7 @@ import aiohttp.web
 
 log = logging.getLogger(__file__)
 
+
 class WebView:
     """ aiohttp server for website and api """
     
