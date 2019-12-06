@@ -11,7 +11,6 @@
 -> web
 
 # web #
--> something going wrong with offer._asdict() not being parsed properly by json.dumps() due to the skills list
 -> sort by match
 -> find a solution for <th>
 -> move salary under match
@@ -24,7 +23,6 @@
       - average match for query
 
 # database #
--> database reporting tools (testing)
 -> fix insert offer for the new model 
 
 # nlp # --> move to analyse.py and merge with test.py
@@ -34,14 +32,12 @@
 -> parse salary from description
 
 # organisation # 
--> testing suite
 -> virtual environement
 -> README.MD
 -> move everything to a /src
 
 # To think about #
 -> remove doubles
--> Indeed still not answering
 -> auto apply
 -> cli view (long live the cli)
 -> data analysis:
