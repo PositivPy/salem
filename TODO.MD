@@ -5,11 +5,6 @@
 -> can click multiple times on search thus getting the same results mutliple times ==> disable the button or find a way to cancel the request -> a way to cancel query : https://stackoverflow.com/questions/34710835/proper-way-to-shutdown-asyncio-tasks
 -> maybe, problem with coroutine not being really async, the parse function should probably be an async generator
 
-
-# urgent #
--> organisation
--> web
-
 # web #
 -> sort by match
 -> find a solution for <th>
@@ -25,22 +20,19 @@
 # database #
 -> fix insert offer for the new model 
 
-# nlp # --> move to analyse.py and merge with test.py
+# nlp # --> move to analyse.py
 -> parse qualifications from description
 -> parse education
 -> parse benefits from description
 -> parse salary from description
 
+# report #
+-> refactor 
+-> build figures and add them to a plot rather than creating a plot for each
+
 # organisation # 
--> virtual environement
 -> README.MD
--> move everything to a /src
 
 # To think about #
--> remove doubles
 -> auto apply
 -> cli view (long live the cli)
--> data analysis:
-      - query insights via API
-      - most skills required (bag of words ?)
-      - color code salary (high to low) and skills (frequency) red to green to grey for unknown

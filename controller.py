@@ -56,7 +56,7 @@ class App(aioObject):
                 # retrieve the offers from db
                 all_offers = await self.db.retrieve_offers_from(query_id)
 
-                length = all_offers.length()
+                length = len(all_offers)
                 log.info(f'Offers in database: {length}')
 
                 if all_offers:

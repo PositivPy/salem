@@ -2,16 +2,13 @@
 
 """ This script is meant for analysing the database /data/query-offer.db """
 
-import asyncio
+import asyncio, statistics, json
 from collections import Counter, OrderedDict
-import model
-import database, nlp
+import database, nlp, model
 import aiosqlite
 from aiosqlite import IntegrityError
-import statistics
 import matplotlib.pyplot as plt 
 import numpy as np 
-import json
 from wordcloud import WordCloud
 
 
@@ -98,8 +95,7 @@ def plot(stats):
         plt.show() 
 
 async def plot_salary_stats(db):
-     
-    
+         
     stats = []
     print(stats)
     queries = await db.retrieve_all_queries()

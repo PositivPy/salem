@@ -100,7 +100,6 @@ class AsyncDB(aioObject):
         ::return:: row_id, last_update (None if new)"""
         # is the query in the database ?
         await self.cursor.execute('''SELECT rowid, count, last_update from QUERIES where string = ? ;''', (query,))
-        
         try:
             # the query exist in the database
             row_id, count, last_update = await self.cursor.fetchone()
