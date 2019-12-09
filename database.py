@@ -8,7 +8,7 @@ from aiosqlite import IntegrityError
 log = logging.getLogger(__file__)
 
 # disable traceback
-sys.tracebacklimit=0
+#sys.tracebacklimit=0
 
 # TODO : move aioObject somewhere else
 class aioObject(object):
@@ -175,7 +175,7 @@ class AsyncDB(aioObject):
             offer_ids = await self.cursor.fetchall()
             try:
                 # finaly, select all the offers and yield named tuples
-                await self.cursor.execute("SELECT * from OFFERS WHERE rowid IN {} ;".format(str(tuple([offer_id[0] for offer_id in offer_ids]))))
+                await self.cursor.execute("SELECT * from OFFERS WHERE rowid IN {} ;".format(str(tuple([offer_id[0] for offer_id in offer_ids if offer_id[0] != None]))))
                 return await self.cursor.fetchall()
             except:
                 # the offer has a type problem
