@@ -1,14 +1,9 @@
 Can I apply automatically to ads with certainty ?
-- The target (above living wage)
 - The indeed/reed suggestions problem, what wages should I apply to ?
-- extracting relevant job offers
-- Comparing my skills to an offer's 
-- extracting most important skills 
-
+    => extracting relevant job offers from wages
+- Comparing CVs to Offer's 
+    => extracting most important skills 
 - pitfalls, ameloriation 
-
-
-
 
 
 SUMMARY
@@ -19,12 +14,33 @@ ABSTRACT
 
 The online job market represent % of all applications sent to companies. The application process has been streamlined enough that the longest part of applying for a vacancy is still... searching. Picking the offers from a dense stream of haystack and text based search, while obviously practical, is rather limited (see part recursive) and biased (see part X) as well.
 Moreover, not all offers fits an applicant's interest or expectation. And an applicant does not necessarely fit all requirements. Thus, it would be conterproductive for a job seeker to apply to all offers regardless.
-Would it be possible to a new type of search, with different metrics ?
+Is it possible to create a faster type of search, with different metrics ?
 
+TOOLS
 
+1. Libraries:
+In an effort to keep dependencies low, few libraries are to be installed.
 
+For the App/Scraper;
+Aiosqlite and aiohttp for async methods waiting for IO (waiting for a web page or a database lock)
+Note: aiohttp is orders of magnitudes faster than requests but is quite brutal on servers and local coffee shops (over 200 requests in less than 10 seconds). 
 
+For the reports only;
+Matplotlib for plotting. It is a bit of a pain to use. For example a Figure does not have the same properties as a pyplot or an Axe and an inserted Axe does not share it's properties with an Axe somehow. 
 
+Pandas and numpy for fast data wrangling. While not used very much here, it is optimal for operations on structured data. 
 
+That is it.
 
+2. The Scraper:
+Download, parsing and database
 
+3. Web Socket:
+Why, how, use cases
+
+ANALYSIS
+
+1. Skills extraction and matching:
+Gazeteers vs machine learning
+2. Wages analysis:
+how does different plotting techniques create biases

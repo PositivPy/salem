@@ -67,7 +67,7 @@ class SalariesReport(models.aioObject):
             count += 1
 
         ## setting titles
-        fig.suptitle('SALARY COMPARAISON REPORT\n Salary Data for London, UK', y=0.99, fontsize=14)
+        fig.suptitle('ONLINE JOB MARKET INSIGHTS\n Salary Data for London, UK', y=0.99, fontsize=14)
         curve_ax.set_title('Annual Average Wage')
         under_ax.set_title('Annual Wage Distribution')
         matplotlib.pyplot.text(0.45, 0.03, f"Total sample size: {total_offers} offers.", fontsize=8, transform=fig.transFigure)

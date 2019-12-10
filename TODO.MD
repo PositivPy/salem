@@ -3,9 +3,9 @@
 
 # BUG #
 -> can click multiple times on search thus getting the same results mutliple times ==> disable the button or find a way to cancel the request -> a way to cancel query : https://stackoverflow.com/questions/34710835/proper-way-to-shutdown-asyncio-tasks
--> maybe, problem with coroutine not being really async, the parse function should probably be an async generator
 
 # web #
+-> fix undefined
 -> sort by match
 -> find a solution for <th>
 -> move salary under match
@@ -16,6 +16,7 @@
       - time
       - mean/median salary for the query
       - average match for query
+-> could use the reports or create a new page for reports 
 
 # database #
 -> fix insert offer for the new model 
@@ -27,12 +28,16 @@
 -> parse salary from description
 
 # report #
--> refactor 
--> build figures and add them to a plot rather than creating a plot for each
-
-# organisation # 
--> README.MD
+-> add logger
+-> move all the analysis to nlp
+-> arg parser
+-> advanced skills report
+-> optimize matplotlib
 
 # To think about #
 -> auto apply
 -> cli view (long live the cli)
+
+# other #
+-> type a report
+-> type a CV
