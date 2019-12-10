@@ -13,8 +13,10 @@ sys.tracebacklimit=0
 class ConnectionInterrupted(Exception):
     pass 
 
+
 session_ = aiohttp.ClientSession
 timeout = aiohttp.ClientTimeout(10)
+
 
 async def fetch_all(urls, session):
     """

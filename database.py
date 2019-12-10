@@ -28,7 +28,7 @@ class AsyncDB(models.aioObject):
         await self.create_tables()
 
     def work(func):
-        """ Async decorator: opening the database in a context manager before use """
+        """ Async decorator: opening the database session and connectors in a context manager """
         async def _wraper(*args):
             # decorator in class : extract self from function args
             self = args[0]
