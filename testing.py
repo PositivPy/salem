@@ -31,14 +31,59 @@ class aioObject(object):
         pass
 
 
-class PlotSalaries(aioObject):
+class SalariesReport(aioObject):
     """ Ploting salary stats for all queries in '/data/<db_name>.db' """
+
     async def __init__(self, db_name):
         self.db = await database.AsyncDB(db_name, model)
         self.queries = await self.db.retrieve_all_queries()
-        # remove margins for all plots 
+        # trying to remove margins for all plots 
         matplotlib.rcParams['savefig.pad_inches'] = 0
     
+    async def report_all(self):
+        # calculating stats for all queries
+        stats = []
+        for qid, qname, _, qcount in self.queries:
+            try:
+                dataframe, mean, median, min_, max_ = await self.calculate_salary_stats(qid)
+                stats.append((qname, dataframe, max_, min_, mean, median))
+            except Exception:
+                # the query is empty
+                pass
+
+        # sort stats by max and median for fallback (if two max are equal)
+        stats.sort(key=lambda item: (item[2], item[5]), reverse=True)
+
+        fig = plt.figure()
+
+        main_gridspec = gridspec.GridSpec(1, 2, wspace=0.1)
+        
+        # creating the grid spec for the histograms 
+        left_gridspec = gridspec.GridSpecFromSubplotSpec(len(stats), 1, main_gridspec[1])
+
+        ## plotting curves
+        curve_ax = fig.add_subplot(main_gridspec[0])
+        self.plot_curves(curve_ax, stats)
+
+        ## undelay for the distribs' legends
+        under_ax = fig.add_subplot(main_gridspec[1], sharex=curve_ax, sharey=curve_ax)
+        under_ax.yaxis.set_visible(False)
+        under_ax.patch.set_visible(False)
+        # plotting living wage
+        under_ax.axvline(x=22360, color='k', linestyle=':', label="Living Wage")
+
+        # re-sort the stats in reverse this time 
+        stats.sort(key=lambda item: (item[2], item[5]))
+
+        ## plotting distribs 
+        count = 0
+        while count < len(stats):
+            ax = fig.add_subplot(left_gridspec[count, 0], sharex=curve_ax)
+            self.plot_distrib(ax, stats[count], 1000)
+            count += 1
+
+        plt.show()
+
     async def calculate_salary_stats(self, query_id):
         offers = await self.db.retrieve_offers_from(query_id)
         if offers:
@@ -69,7 +114,7 @@ class PlotSalaries(aioObject):
 
             return df, mean, median, min_, max_
 
-    def plot_distrib(self, ax, stats, box_width=500):
+    def plot_distrib(self, ax, stat, box_width=500):
         '''
         From Reddit:
         You can convert each salary range to a uniform distribution over that range
@@ -82,7 +127,7 @@ class PlotSalaries(aioObject):
         between 10k and 11k, between 11k and 12k, etc... But each with 1/5 weight. 
         '''
         # unpacking stats
-        qname, df, max_, min_, mean, median = stats
+        qname, df, max_, min_, mean, median = stat
 
         # query_width: number of boxes until max is reached 
         query_width = int(max_ // box_width) + 1
@@ -94,7 +139,7 @@ class PlotSalaries(aioObject):
         for i, row in df.iterrows():
             boxes_filled = []
             for index in indexes:
-                if row['minSalary'] < index and row['maxSalary'] >= index:
+                if index in range(row['minSalary'], row['maxSalary']):
                     boxes_filled.append(index)
             # weigth of the offer in each boxes
             if boxes_filled:
@@ -103,19 +148,18 @@ class PlotSalaries(aioObject):
                     res[box] += weigth         
         # sorting res by key
         sort = collections.OrderedDict(sorted(res.items()))
-
-        # normalising to %
-        total_offers = len(df.index)
-        for key, item in sort.items():
-            sort[key] = (item / total_offers) * 100
-
-        # removing null boxes
-        for key, value in list(sort.items()):
-            if value == 0 :
-                sort.pop(key)
             
-        ax.bar(sort.keys(), sort.values(), box_width, color='blue') 
-        
+        # plot the bar chart
+        barplot = ax.bar(sort.keys(), sort.values(), box_width, color='blue') 
+        print(len(barplot))
+        # removing all borders and ticks
+        ax.yaxis.set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.xaxis.set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+
         # transparent background
         ax.patch.set_visible(False)
 
@@ -154,53 +198,6 @@ class PlotSalaries(aioObject):
         ax.legend() 
        
         return ax
-
-    async def plot_all_salary(self):
-        # calculating stats for all queries
-        stats = []
-        for qid, qname, _, qcount in self.queries:
-            try:
-                dataframe, mean, median, min_, max_ = await self.calculate_salary_stats(qid)
-                stats.append((qname, dataframe, max_, min_, mean, median))
-            except Exception:
-                # the query is empty
-                pass
-
-        # sort stats by max
-        stats.sort(key=lambda item: item[2], reverse=True)
-
-        fig = plt.figure()
-
-        main_gridspec = gridspec.GridSpec(1, 2, wspace=0.01)
-        
-        # creating the grid spec for the histograms 
-        left_gridspec = gridspec.GridSpecFromSubplotSpec(len(stats), 1, main_gridspec[1])
-
-        curve_ax = fig.add_subplot(main_gridspec[0])
-        self.plot_curves(curve_ax, stats)
-
-        # re-sort the stats in reverse this time 
-        stats.sort(key=lambda item: item[2])
-
-        count = 0
-        while count < len(stats):
-            ax = fig.add_subplot(left_gridspec[count, 0], sharex=curve_ax)
-
-            self.plot_distrib(ax, stats[count], 500)
-
-            # removing left, right and top borders
-            ax.yaxis.set_visible(False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-
-            # keeping bottom border and ticks for the last plot
-            if count != len(stats) -1:
-                ax.xaxis.set_visible(False)
-                ax.spines['bottom'].set_visible(False)
-            count += 1
-        
-        plt.show()
 
     async def plot_all_salary_distrib(self):
         # calculating stats for all queries
@@ -242,7 +239,7 @@ class PlotSalaries(aioObject):
 
 if __name__ == "__main__":
     async def test():
-        analyser = await PlotSalaries('query-offer.db')
-        await analyser.plot_all_salary()
+        report = await SalariesReport('query-offer.db')
+        await report.report_all()
 
     asyncio.run(test())

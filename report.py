@@ -2,192 +2,88 @@
 
 """ This script is meant for analysing the database /data/query-offer.db """
 
-import asyncio, statistics, json
+import asyncio, aiosqlite
 from collections import Counter, OrderedDict
-import database, nlp, model
-import aiosqlite
-from aiosqlite import IntegrityError
-import matplotlib.pyplot as plt 
-import numpy as np 
+
+import database, model
+import numpy, matplotlib.pyplot
 from wordcloud import WordCloud
 
 
-class ManagedDB(database.AsyncDB):
+class SkillsReport(object):
+    """ Analysing skills from the salem db """
 
-    async def __init__(self, name, data_type):
-        self.name, self.data_type = name, data_type
-        await super().__init__(self.name, self.data_type)
+    async def report_all(self):
+        data_type = model
+        name = 'query-offer.db'
+        db = await database.AsyncDB(name, data_type)
+        ct = await self.extract_all(db)
+        self.plot_bar_chart(ct)
 
-    def work(func):
-        """ Async decorator: opening the database in a context manager before use """
-        async def _wraper(*args):
-            # decorator in class : extract self from function args
-            self = args[0]
-            # open connection in a context manager
-            async with aiosqlite.connect(self.name) as self.con:
-                self.cursor = await self.con.cursor()
-                return await func(*args)
-        return _wraper
+    async def extract_all(self, db):
+        """ Extract skills from all queries 
+        ::return:: Counter()"""
+        queries = await db.retrieve_all_queries()
+        ct = Counter() 
+        in_ct = 0
+        for qid, qname, _, __ in queries:
+            try:
+                offers = await db.retrieve_offers_from(qid)
+                for offer in offers:
+                    in_ct += 1
+
+                    skills = offer[7]
+                    # parsing skills string to list 
+                    skills = skills.replace('[', '')
+                    skills = skills.replace("'", '')
+                    skills = skills.replace(']', '')
+                    skills = skills.split(', ')
+
+                    # adding the skills to the counter
+                    for skill in skills:
+                        ct[skill] += 1
+            except :
+                "Nothing found" 
+        # sort counter 
+        ct = OrderedDict(ct.most_common())
+        print(f'Total Offers: {in_ct}')
+        return ct
+
+    def plot_bar_chart(self, counter):
+        if not counter:
+            return
+        labels, values = zip(*counter.items())
+        indexes = numpy.arange(len(labels))
+        width = 1
+
+        matplotlib.pyplot.bar(indexes, values, width)
         
-    @work
-    async def retrieve_all_offers(self):
-        await self.cursor.execute('''SELECT rowid from OFFERS ;''')
-        res = await self.cursor.fetchall()
-        print(res)
+        # hidding skills labels
+        #frame1 = matplotlib.pyplot.gca()
+        #frame1.axes.xaxis.set_ticklabels([])
+        matplotlib.pyplot.xticks(indexes + width * 0.5, labels, rotation=90)
 
-    @work
-    async def retrieve_all_relation(self):
-        await self.cursor.execute('''SELECT * from QUERY_TO_OFFER''')
-        res = await self.cursor.fetchall()
-        print(res)
+        # adjusting the frame
+        matplotlib.pyplot.subplots_adjust(left=0.10, bottom=0.08, right=0.97, top=0.94)
 
-
-def median_mean_salary(offers):
-    salaries = [int(offer[4]) for offer in offers if int(offer[4]) > 0]
-    salaries.sort(reverse=True)
-    print(salaries)
-    
-    avg = int(statistics.mean(salaries))
-    median = int(statistics.median(salaries))
-    min_ = int(min(salaries))
-    max_ = int(max(salaries))
-
-    print(f'Median: {median} Average: {avg} Min: {min_} Max: {max_}')
-    return avg, median, min_, max_
-       
-def plot(stats):
-        # ie. stats = [(query_name, avg, median)*n_queries]
-        # separating data into numpy arrays
-        labels = np.array([item[0] for item in stats])
-        average = np.array([item[1] for item in stats])
-        median = np.array([item[2] for item in stats])
-        min_ = np.array([item[3] for item in stats])
-        max_ = np.array([item[4] for item in stats])
-
-        # plotting the line 1 points  
-        plt.plot(labels, average, label = "Mean") 
-        plt.plot(labels, median, label = "Median") 
-        plt.plot(labels, min_, label = "Min") 
-        plt.plot(labels, max_, label = "Max") 
- 
-        # ploting the living wage
-        plt.axhline(y=22360, color='k', linestyle=':', label="Living Wage")
-
-        # naming the y axis 
-        plt.ylabel('Salary') 
+        matplotlib.pyplot.xlabel('Skills') 
+        matplotlib.pyplot.ylabel('Frequency')
         # giving a title to my graph 
-        plt.title('Job to Salary') 
+        matplotlib.pyplot.title('Skills Frequency') 
         
-        # show a legend on the plot 
-        plt.legend() 
+        matplotlib.pyplot.show()
 
-        # rotating the labels
-        plt.xticks(rotation=90)
-
-        # filling between lines
-        plt.fill_between(labels, average, max_, color='red')
-        plt.fill_between(labels, average, median, color='yellow')
-        plt.fill_between(labels, median, min_, color='green')
-
-        plt.subplots_adjust(left=0.14, bottom=0.3, right=0.96, top=0.93)
+    def plot_word_cloud(self, counter):
+        wordcloud = WordCloud()
+        wordcloud.generate_from_frequencies(frequencies=counter)
         
-        # function to show the plot 
-        plt.show() 
-
-async def plot_salary_stats(db):
-         
-    stats = []
-    print(stats)
-    queries = await db.retrieve_all_queries()
-    for qid, qname, _, qcount in queries:
-        print(qid, qname)
-        try:
-            offers = await db.retrieve_offers(qid)
-        except TypeError:
-            "nothing found"
-        try:
-            avg, median, min_, max_ = median_mean_salary(offers)
-            stats.append((qname, avg, median, min_, max_))
-        except statistics.StatisticsError:
-            print("nothing found")
-        
-    # sort stats by max
-    stats.sort(key=lambda item: item[4])
-
-    plot(stats)
-
-async def skills_extraction(db):
-
-    queries = await db.retrieve_all_queries()
-    ct = Counter() 
-    in_ct = 0
-    for qid, qname, _, __ in queries:
-        try:
-            offers = await db.retrieve_offers_from(qid)
-            for offer in offers:
-                in_ct += 1
-
-                skills = offer[7]
-                skills = skills.replace('[', '')
-                skills = skills.replace("'", '')
-                skills = skills.replace(']', '')
-                skills = skills.split(', ')
-                for skill in skills:
-                    ct[skill] += 1
-        except :
-            "Nothing found" 
-        
-
-    # sort counter 
-    ct = OrderedDict(ct.most_common())
-    print(f'Total Offers: {in_ct}')
-    return ct
-
-def plot_bar_chart(counter):
-    if not counter:
-        return
-    print(counter)
-    labels, values = zip(*counter.items())
-    indexes = np.arange(len(labels))
-    width = 1
-
-    plt.bar(indexes, values, width)
-    
-    # hidding skills labels
-    #frame1 = plt.gca()
-    #frame1.axes.xaxis.set_ticklabels([])
-    plt.xticks(indexes + width * 0.5, labels, rotation=90)
-
-    # adjusting the frame
-    plt.subplots_adjust(left=0.10, bottom=0.08, right=0.97, top=0.94)
-
-    plt.xlabel('Skills') 
-    plt.ylabel('Frequency')
-    # giving a title to my graph 
-    plt.title('Skills Frequency') 
-    
-
-    plt.show()
-
-def plot_word_cloud(counter):
-    wordcloud = WordCloud()
-    wordcloud.generate_from_frequencies(frequencies=counter)
-    
-    plt.figure()
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-    plt.show()
+        matplotlib.pyplot.figure()
+        matplotlib.pyplot.imshow(wordcloud, interpolation="bilinear")
+        matplotlib.pyplot.axis("off")
+        matplotlib.pyplot.show()
         
 
 if __name__ == "__main__":
-    import sys
+    report = SkillsReport()
 
-    async def test():
-        data_type = model
-        name = 'query-offer.db'
-        db = await ManagedDB(name, data_type)
-    # define async test function 
-        ct = await skills_extraction(db)
-        plot_bar_chart(ct)
-        #asyncio.run(plot_salary_stats(name))  
-    asyncio.run(test())      
+    asyncio.run(report.report_all())      
