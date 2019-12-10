@@ -1,41 +1,17 @@
-import asyncio, collections
+#!/usr/bin/env python3
 
-import database, model
+import asyncio, collections, sys
 
-import pandas as pd#
-import matplotlib
-import matplotlib.pyplot as plt 
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import matplotlib.gridspec as gridspec
+import database, models
+import pandas, numpy, matplotlib, matplotlib.pyplot, matplotlib.gridspec
 from matplotlib.ticker import FuncFormatter
 
-import numpy as np
 
-import sys
-# enable traceback for debugging
-#sys.tracebacklimit=1
-
-
-# TODO : move aioObject somewhere else
-class aioObject(object):
-    """ Inheriting this class allows you to define an async __init__.
-    So you can create objects by doing something like 'await MyClass(params)'
-    https://stackoverflow.com/questions/33128325/how-to-set-class-attribute-with-await-in-init
-    """
-    async def __new__(cls, *a, **kw):
-        instance = super().__new__(cls)
-        await instance.__init__(*a, **kw)
-        return instance
-
-    async def __init__(self):
-        pass
-
-
-class SalariesReport(aioObject):
+class SalariesReport(models.aioObject):
     """ Ploting salary stats for all queries in '/data/<db_name>.db' """
 
-    async def __init__(self, db_name):
-        self.db = await database.AsyncDB(db_name, model)
+    async def __init__(self, db):
+        self.db = db
         self.queries = await self.db.retrieve_all_queries()
         # trying to remove margins for all plots 
         matplotlib.rcParams['savefig.pad_inches'] = 0
@@ -54,12 +30,12 @@ class SalariesReport(aioObject):
         # sort stats by max and median for fallback (if two max are equal)
         stats.sort(key=lambda item: (item[2], item[5]), reverse=True)
 
-        fig = plt.figure()
+        fig = matplotlib.pyplot.figure()
 
-        main_gridspec = gridspec.GridSpec(1, 2, wspace=0.1)
+        main_gridspec = matplotlib.gridspec.GridSpec(1, 2, wspace=0.1)
         
         # creating the grid spec for the histograms 
-        left_gridspec = gridspec.GridSpecFromSubplotSpec(len(stats), 1, main_gridspec[1])
+        left_gridspec = matplotlib.gridspec.GridSpecFromSubplotSpec(len(stats), 1, main_gridspec[1])
 
         ## plotting curves
         curve_ax = fig.add_subplot(main_gridspec[0])
@@ -82,14 +58,14 @@ class SalariesReport(aioObject):
             self.plot_distrib(ax, stats[count], 1000)
             count += 1
 
-        plt.show()
+        matplotlib.pyplot.show()
 
     async def calculate_salary_stats(self, query_id):
         offers = await self.db.retrieve_offers_from(query_id)
         if offers:
-            df = pd.DataFrame(data=offers)
+            df = pandas.DataFrame(data=offers)
             # set numeric type if possible
-            df = df.apply(pd.to_numeric, errors='ignore')
+            df = df.apply(pandas.to_numeric, errors='ignore')
 
             # remove ads with no advertised salaries
             df = df[df.minSalary != 0]
@@ -126,7 +102,7 @@ class SalariesReport(aioObject):
         of between 10k and 15k, you can simply replace it by 5 data points: 
         between 10k and 11k, between 11k and 12k, etc... But each with 1/5 weight. 
         '''
-        # unpacking stats
+        # unumpyacking stats
         qname, df, max_, min_, mean, median = stat
 
         # query_width: number of boxes until max is reached 
@@ -165,12 +141,12 @@ class SalariesReport(aioObject):
 
     def plot_curves(self, ax, stats):
         # separating data into numpy arrays
-        labels = np.array([item[0] for item in stats])
+        labels = numpy.array([item[0] for item in stats])
 
-        average = np.array([item[4] for item in stats])
-        median = np.array([item[5] for item in stats])
-        min_ = np.array([item[3] for item in stats])
-        max_ = np.array([item[2] for item in stats])
+        average = numpy.array([item[4] for item in stats])
+        median = numpy.array([item[5] for item in stats])
+        min_ = numpy.array([item[3] for item in stats])
+        max_ = numpy.array([item[2] for item in stats])
 
         # formatting salary on xaxis
         def _millions(x, pos):
@@ -199,7 +175,7 @@ class SalariesReport(aioObject):
        
         return ax
 
-    async def plot_all_salary_distrib(self):
+
         # calculating stats for all queries
         stats = []
         for qid, qname, _, qcount in self.queries:
@@ -214,7 +190,7 @@ class SalariesReport(aioObject):
         stats.sort(key=lambda item: item[2])
 
         # creating axes for all histogram
-        fig, axes = plt.subplots(len(stats), 1, sharex=True, sharey=True)
+        fig, axes = matplotlib.pyplot.subplots(len(stats), 1, sharex=True, sharey=True)
 
         count = 0
         while count < len(stats):
@@ -235,11 +211,16 @@ class SalariesReport(aioObject):
                 ax.spines['bottom'].set_visible(False)
             count += 1
         
-        plt.show()
+        matplotlib.pyplot.show()
+
 
 if __name__ == "__main__":
+    data_type = models
+    db_name = 'query-offer.db'
+
     async def test():
-        report = await SalariesReport('query-offer.db')
+        db = await database.AsyncDB(db_name, models)
+        report = await SalariesReport(db)
         await report.report_all()
 
     asyncio.run(test())

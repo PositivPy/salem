@@ -2,30 +2,15 @@
 
 import sys, collections.abc, asyncio, aiostream, logging, datetime
 
-import database, views, jobs, nlp, model
+import database, views, jobs, nlp, models
 
 log = logging.getLogger(__file__)
 
-
-class aioObject(object):
-    """ Inheriting this class allows you to define an async __init__.
-    So you can create objects by doing something like 'await MyClass(params)'
-    https://stackoverflow.com/questions/33128325/how-to-set-class-attribute-with-await-in-init
-    """
-    async def __new__(cls, *a, **kw):
-        instance = super().__new__(cls)
-        await instance.__init__(*a, **kw)
-        return instance
-
-    async def __init__(self):
-        pass
-
-
-class App(aioObject):
+class App(models.aioObject):
     """ Controlling the app's behaviors """
 
     async def __init__(self):
-        self.db = await database.AsyncDB("query-offer.db", model)
+        self.db = await database.AsyncDB("query-offer.db", models)
         self.api = jobs.Interface
         self.nlp = nlp
         # passing self.search as a callback to view

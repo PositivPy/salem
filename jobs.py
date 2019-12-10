@@ -2,13 +2,13 @@
 
 import collections, asyncio, time, logging
 
-import aiostream, urllib, http_, model
+import aiostream, urllib, http_, models
 
 log = logging.getLogger(__file__)
 
 
 # define the model to be used 
-Offer = model.JobOffer
+Offer = models.JobOffer
 
 
 class Interface:

@@ -2,7 +2,7 @@
 
 import sys, os, collections, asyncio, logging
 
-import aiosqlite, model 
+import aiosqlite, models 
 from aiosqlite import IntegrityError
 
 log = logging.getLogger(__file__)
@@ -10,22 +10,8 @@ log = logging.getLogger(__file__)
 # disable traceback
 #sys.tracebacklimit=0
 
-# TODO : move aioObject somewhere else
-class aioObject(object):
-    """ Inheriting this class allows you to define an async __init__.
-    So you can create objects by doing something like 'await MyClass(params)'
-    https://stackoverflow.com/questions/33128325/how-to-set-class-attribute-with-await-in-init
-    """
-    async def __new__(cls, *a, **kw):
-        instance = super().__new__(cls)
-        await instance.__init__(*a, **kw)
-        return instance
 
-    async def __init__(self):
-        pass
-
-
-class AsyncDB(aioObject):
+class AsyncDB(models.aioObject):
     """ Async aiosqlite database """
     
     async def __init__(self, name, model):

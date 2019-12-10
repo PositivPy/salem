@@ -54,16 +54,16 @@ class TestJobApi(unittest.TestCase):
 
 
 class TestModel(unittest.TestCase):
-    import model
+    import models
 
-    def test_job_model(self):
-        offer = self.model.JobOffer()
+    def test_job_models(self):
+        offer = self.models.JobOffer()
         # just checks if it's a tuple for the moment
         self.assertIs(offer.__class__.__bases__[0], tuple)
 
 
 class TestDB(unittest.TestCase):
-    import model, database
+    import models, database
 
     name = 'test.db'
 
@@ -74,7 +74,7 @@ class TestDB(unittest.TestCase):
         loop = asyncio.get_event_loop()
         self.db = loop.run_until_complete(asyncio.gather(build_db(self.name)))[0]
 
-        self.test_offer = self.model.JobOffer('testOffer')
+        self.test_offer = self.models.JobOffer('testOffer')
         self.test_query = 'test query'
 
     def test_db_built(self):
