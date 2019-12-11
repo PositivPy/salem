@@ -44,3 +44,15 @@ ANALYSIS
 Gazeteers vs machine learning
 2. Wages analysis:
 how does different plotting techniques create biases
+
+
+
+
+
+The case for a brutal downloader in this situation:
+Small scale operation. I'm sure Indeed is prepared for these sorts of situations. 
+Anyway, if a few frames drop, the next query will scrape them, thus a timeout is set (10sec). 
+
+
+skills extractions 
+Just like salaries, I need to be able to separate common skills and specific offer skills 

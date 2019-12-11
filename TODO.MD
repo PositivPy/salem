@@ -5,7 +5,6 @@
 -> can click multiple times on search thus getting the same results mutliple times ==> disable the button or find a way to cancel the request -> a way to cancel query : https://stackoverflow.com/questions/34710835/proper-way-to-shutdown-asyncio-tasks
 
 # web #
--> fix undefined
 -> sort by match
 -> find a solution for <th>
 -> move salary under match

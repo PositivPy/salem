@@ -160,6 +160,7 @@ class AsyncDB(models.aioObject):
             await self.cursor.execute(f'''SELECT offer_id from QUERY_TO_OFFER WHERE query_id='{query_id}' ;''')
             offer_ids = await self.cursor.fetchall()
             try:
+                # TODO: this fails if the query has only 1 offer, might be a good thing tho
                 # finaly, select all the offers and yield named tuples
                 await self.cursor.execute("SELECT * from OFFERS WHERE rowid IN {} ;".format(str(tuple([offer_id[0] for offer_id in offer_ids if offer_id[0] != None]))))
                 return await self.cursor.fetchall()

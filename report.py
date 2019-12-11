@@ -21,24 +21,35 @@ class SalariesReport(models.aioObject):
         # trying to remove margins for all plots 
         matplotlib.rcParams['savefig.pad_inches'] = 0
     
-    async def report_all(self):
+    async def report_all(self, specific=None):
+        """ Build report for all queries or for specific query ids """
+        if specific:
+            queries = list(filter(lambda query: query[0] in specific, self.queries))
+        else :
+            queries = self.queries
+
+        print(queries)
+
         # calculating stats for all queries
         total_offers = 0
         stats = []
-        for qid, qname, _, qcount in self.queries:
+        for qid, qname, _, __ in queries:
             try:
                 dataframe, mean, median, min_, max_ = await self.calculate_salary_stats(qid)
                 stats.append((qname, dataframe, max_, min_, mean, median))
                 total_offers += len(dataframe.index)
-            except Exception:
+            except Exception as e:
+                print(f'Error with "{qname}" Id: {qid}')
                 # the query is empty
                 pass
 
+        #print(stats)
+
         # sort stats by max and median for fallback (if two max are equal)
-        stats.sort(key=lambda item: (item[2], item[5]), reverse=True)
+        stats.sort(key=lambda item: (item[4], item[2]), reverse=True)
 
+        # figure and layout
         fig = matplotlib.pyplot.figure()
-
         main_gridspec = matplotlib.gridspec.GridSpec(1, 2, wspace=0.1)
         
         # creating the grid spec for the histograms 
@@ -56,10 +67,9 @@ class SalariesReport(models.aioObject):
         # plotting living wage
         under_ax.axvline(x=22360, color='k', linestyle=':', label="Living Wage")
 
-        # re-sort the stats in reverse this time 
-        stats.sort(key=lambda item: (item[2], item[5]))
-
         ## plotting distribs 
+        # re-sort the stats in reverse this time 
+        stats.sort(key=lambda item: (item[4], item[2]))
         count = 0
         while count < len(stats):
             ax = fig.add_subplot(left_gridspec[count, 0], sharex=curve_ax)
@@ -72,7 +82,6 @@ class SalariesReport(models.aioObject):
         under_ax.set_title('Annual Wage Distribution')
         matplotlib.pyplot.text(0.45, 0.03, f"Total sample size: {total_offers} offers.", fontsize=8, transform=fig.transFigure)
         
-
         matplotlib.pyplot.show()
 
     async def calculate_salary_stats(self, query_id):
@@ -195,45 +204,6 @@ class SalariesReport(models.aioObject):
        
         return ax
 
-
-        # calculating stats for all queries
-        stats = []
-        for qid, qname, _, qcount in self.queries:
-            try:
-                dataframe, mean, median, min_, max_ = await self.calculate_salary_stats(qid)
-                stats.append((qname, dataframe, max_, min_))
-            except Exception:
-                # the query is empty
-                pass 
-
-        # sort stats by max
-        stats.sort(key=lambda item: item[2])
-
-        # creating axes for all histogram
-        fig, axes = matplotlib.pyplot.subplots(len(stats), 1, sharex=True, sharey=True)
-
-        count = 0
-        while count < len(stats):
-            ax = axes[count]
-            self.plot_distrib(ax, stats[count], 5000)
-
-            ax.set_title(stats[count][0], x=-0.2,y=0.1)
-
-            # removing left, right and top borders
-            ax.yaxis.set_visible(False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-
-            # keeping bottom border and ticks for the last plot
-            if count != len(stats) -1:
-                ax.xaxis.set_visible(False)
-                ax.spines['bottom'].set_visible(False)
-            count += 1
-        
-        matplotlib.pyplot.show()
-
-
 class SkillsReport(models.aioObject):
     """ Analysing skills from the salem db in  /data/query-offer.db """
 
@@ -319,7 +289,8 @@ def report_salaries():
     async def test():
         db = await database.AsyncDB(db_name, models)
         report = await SalariesReport(db)
-        await report.report_all()
+        specific = [14, 15, 16, 17, 18, 20]
+        await report.report_all(specific)
 
     asyncio.run(test())
 

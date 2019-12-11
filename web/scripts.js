@@ -48,7 +48,7 @@ function formatOffer(data) {
     offer.setAttribute("class", "offers");
     offer.setAttribute("salary", data['minSalary']);
 
-    var match_div = formatSkillsMatch(data['match'])
+    var match_div = formatSkillsMatch(data['matched'])
 
     var t_cell = document.createElement('td')
     var text = document.createElement('div');
