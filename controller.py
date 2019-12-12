@@ -17,10 +17,11 @@ class App(models.aioObject):
         self.view = views.WebView(self.search)
 
     def run(self):
+        ''' Run in web view '''
         self.view.start()
 
     async def search(self, query, location):
-        # TODO : in a separate ArgumentParser
+        ''' Search and stores offers '''
         # parsing the query for filters and add words
         original_query = query 
         query, filters = self.parse_filters(original_query)
@@ -68,7 +69,7 @@ class App(models.aioObject):
 
     async def scrape(self, queries, location='London', seen_urls=[]):
         """ Run the scraper for each query in queries
-        Inserts the results into database """
+        and analyses the offers"""
         log.info("Scraping started")
         log.debug(f'Queries : {queries}')
 

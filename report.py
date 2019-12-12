@@ -24,11 +24,10 @@ class SalariesReport(models.aioObject):
     async def report_all(self, specific=None):
         """ Build report for all queries or for specific query ids """
         if specific:
+            # select only the specific queries in self.queries
             queries = list(filter(lambda query: query[0] in specific, self.queries))
         else :
             queries = self.queries
-
-        print(queries)
 
         # calculating stats for all queries
         total_offers = 0
@@ -289,7 +288,7 @@ def report_salaries():
     async def test():
         db = await database.AsyncDB(db_name, models)
         report = await SalariesReport(db)
-        specific = [14, 15, 16, 17, 18, 20]
+        specific = [i for i in range(15)]
         await report.report_all(specific)
 
     asyncio.run(test())

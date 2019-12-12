@@ -8,11 +8,11 @@ Can I apply automatically to ads with certainty ?
 
 SUMMARY
 
-In an effort to seek employment and improve my programming and analytical skills, I spent a month creating a job market analysis tool capable of applying precisely to job offers I would myself consider.
+To seek employment and improve my programming and analytical skills, I've spent a month creating a job market analysis tool capable of applying precisely to job offers I would myself consider.
 
 ABSTRACT 
 
-The online job market represent % of all applications sent to companies. The application process has been streamlined enough that the longest part of applying for a vacancy is still... searching. Picking the offers from a dense stream of haystack and text based search, while obviously practical, is rather limited (see part recursive) and biased (see part X) as well.
+The online job market represent % of all applications sent to companies. The application process has been streamlined enough so that the longest part of applying for a vacancy is still... searching. Picking the offers from a dense stream of haystack. Text based search, while obviously practical, is rather limited (see part recursive) and biased (see part X) as well.
 Moreover, not all offers fits an applicant's interest or expectation. And an applicant does not necessarely fit all requirements. Thus, it would be conterproductive for a job seeker to apply to all offers regardless.
 Is it possible to create a faster type of search, with different metrics ?
 
@@ -46,9 +46,6 @@ Gazeteers vs machine learning
 how does different plotting techniques create biases
 
 
-
-
-
 The case for a brutal downloader in this situation:
 Small scale operation. I'm sure Indeed is prepared for these sorts of situations. 
 Anyway, if a few frames drop, the next query will scrape them, thus a timeout is set (10sec). 
@@ -56,3 +53,17 @@ Anyway, if a few frames drop, the next query will scrape them, thus a timeout is
 
 skills extractions 
 Just like salaries, I need to be able to separate common skills and specific offer skills 
+
+
+Poject scope:
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Python                          10            296            250            776
+CSS                              2             22             15            260
+JavaScript                       1             36             14             94
+HTML                             1              0              0             28
+JSON                             1              0              0              3
+-------------------------------------------------------------------------------
+SUM:                            15            354            279           1161
+-------------------------------------------------------------------------------

@@ -8,7 +8,7 @@ from aiosqlite import IntegrityError
 log = logging.getLogger(__file__)
 
 # disable traceback
-#sys.tracebacklimit=0
+sys.tracebacklimit=0
 
 
 class AsyncDB(models.aioObject):
