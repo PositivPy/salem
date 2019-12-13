@@ -2,7 +2,8 @@
 
 import sys, os, collections, asyncio, logging
 
-import aiosqlite, models 
+from . import models 
+import aiosqlite
 from aiosqlite import IntegrityError
 
 log = logging.getLogger(__file__)

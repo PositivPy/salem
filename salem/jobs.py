@@ -2,7 +2,8 @@
 
 import collections, asyncio, time, logging
 
-import aiostream, urllib, http_, models
+import aiostream, urllib
+from . import http_, models
 
 log = logging.getLogger(__file__)
 

@@ -2,7 +2,7 @@
 
 import sys, collections.abc, asyncio, aiostream, logging, datetime
 
-import database, views, jobs, nlp, models
+from . import database, views, jobs, nlp, models
 
 log = logging.getLogger(__file__)
 

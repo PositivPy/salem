@@ -2,10 +2,10 @@
 
 import sys, logging, asyncio, argparse
 
-import controller
+from . import controller
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(prog='salem', 
+    parser = argparse.ArgumentParser(prog='salem',
             description='Salem job agregator and job market analysis.')
 
     parser = argparse.ArgumentParser(add_help=False)
@@ -18,13 +18,13 @@ def parse_args(argv):
 
     parser.add_argument('-c', '--cli', action='store_true',
             help='Command line only, else salem will run as a web app.')
-    
+
     parser.add_argument('-r', '--report', action='store_true',
             help='Outputs a report on all queries in database')
     return parser.parse_args(argv)
 
 def set_logger(args):
-    ''' Set logging levels from arguments '''  
+    ''' Set logging levels from arguments '''
 
     logging.basicConfig(
         level=logging.NOTSET,
@@ -36,7 +36,7 @@ def set_logger(args):
     sql_log = logging.getLogger('aiosqlite')
     http_log = logging.getLogger('aiohttp')
     async_log = logging.getLogger('asyncio')
-    
+
     sql_log.disabled = True
     http_log.disabled = True
     async_log.disabled = True
@@ -51,7 +51,7 @@ def set_logger(args):
     if args.verbose >= 2:
         root_logger.setLevel(logging.DEBUG)
         root_logger.debug('Debug active')
-    
+
     if args.verbose == 3:
         # full debug mode
         sql_log.disabled = False
@@ -71,7 +71,7 @@ def run(args):
     elif args.cli:
         app.search("bartender")
 
-def main(argv):
+def main(argv=sys.argv[1:]):
 
     args = parse_args(argv)
 
@@ -89,5 +89,4 @@ def main(argv):
     run(args)
 
 if __name__ == "__main__":
-    import sys
-    main(sys.argv[1:])
+    main()
