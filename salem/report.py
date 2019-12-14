@@ -3,7 +3,7 @@
 import asyncio, aiosqlite
 from collections import Counter, OrderedDict, defaultdict
 
-import database, models
+from . import database, models
 import pandas, numpy, matplotlib, matplotlib.pyplot, matplotlib.gridspec
 from matplotlib.ticker import FuncFormatter
 from wordcloud import WordCloud

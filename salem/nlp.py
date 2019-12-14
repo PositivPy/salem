@@ -66,7 +66,7 @@ cv_skills = extract_skills(cv)
 
 def skills_match(offer_skills):
     """ Matches the cv's keywords to the offer's
-    100% if all the offer's keywords are matched
+    100% mean all the offer's keywords are matched
     """
     global cv_skills
 
