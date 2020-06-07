@@ -1,5 +1,5 @@
 # Salem
-Salem is a job aggregator and online job market analysis tool I created in exactly 1 month.
+Salem is a job aggregator and online job market analysis tool I created from scratch in exactly 1 month.
 
 ### Search and match job offers to your CV: 
 `salem`  
