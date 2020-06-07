@@ -3,11 +3,11 @@ Salem is a job aggregator and online job market analysis tool I created in exact
 
 ### Search and match job offers to your CV: 
 `salem`
-[](docs/Search_Page.png)
+![](docs/Search_Page.png)
 
 ### Report salary statistics for your queries:
 `salem -r`
-[](docs/salary-curves_vs_histogram.png)
+![](docs/salary-curves_vs_histogram.png)
 
 ## INSTALL
 `pip3 install git+https://github.com/Ecolow/salem.git`
