@@ -1,5 +1,10 @@
 # Salem
-Salem is a job aggregator and online job market analysis tool I created from scratch in exactly 1 month.
+Salem is a bare bone job aggregator and online job market analysis tool I created from scratch in exactly 1 month. 
+
+The core scraper is FAST; it creates a thread for each websites and process the incoming responses with a pipeline asynchronously. 
+It's architecture is very similar to a micro framework and new scrapers can be added rather easily.
+
+There is still a lot to do to make this a proper application/website but I created this as a quick challenge and out of interest in data analysis as well as learning async operations and matplotlib. 
 
 ### Search and match job offers to your CV: 
 `salem`  
